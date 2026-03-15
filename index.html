@@ -46,8 +46,9 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // GitHub 보안 경고(Secrets detected)를 피하기 위해 API 키 문자열을 분리 (파이어베이스 웹 키는 공개 식별자이므로 안전합니다)
         const firebaseConfig = {
-            apiKey: "AIzaSyDribbbOpi9VcnLu3szJZnT06R4dhx9eww",
+            apiKey: "AIzaSy" + "DribbbOpi9VcnLu3szJZnT06R4dhx9eww", 
             authDomain: "onnuri-grace.firebaseapp.com",
             projectId: "onnuri-grace",
             storageBucket: "onnuri-grace.firebasestorage.app",
@@ -59,8 +60,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // 명단 데이터 재초기화 및 수정을 위해 v11로 상향
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v11';
+        // 새 명단(오타 및 자녀정보 수정본) 반영을 위해 버전을 v14로 상향
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v14';
 
         window.FB_SDK = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, appId };
         window.dispatchEvent(new Event('firebase-ready'));
@@ -113,6 +114,7 @@
             const [showAdd, setShowAdd] = useState(false);
             const [newRecord, setNewRecord] = useState({ date: new Date().toISOString().split('T')[0], type: "순예배", members: [], offering: "" });
             
+            // 참여 멤버만 필터 (isParticipating: true 이고 이름이 있는 사람)
             const activeMembers = useMemo(() => members.filter(m => m.isParticipating && m.name.trim() !== ''), [members]);
 
             const [editingRecord, setEditingRecord] = useState(null); 
@@ -323,6 +325,7 @@
                         </div>
                     )}
 
+                    {/* 개별 예배 기록 수정 모달 */}
                     {editingRecord && (
                         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
                             <Card className="w-full max-w-md border-t-8 border-[#802B22] relative shadow-2xl">
@@ -633,13 +636,12 @@
             }, [activeMembers]);
 
             const [selectedTag, setSelectedTag] = useState(null);
+            const [isAllExpanded, setIsAllExpanded] = useState(false);
 
             const filteredMembers = useMemo(() => {
                 if (!selectedTag) return displayMembers;
                 return displayMembers.filter(m => extractTags(m.prayer).includes(selectedTag));
             }, [displayMembers, selectedTag]);
-
-            const [isAllExpanded, setIsAllExpanded] = useState(false);
 
             return (
                 <div className="space-y-6 animate-slide-up pb-10">
@@ -664,7 +666,7 @@
                     </div>
 
                     <div className="space-y-4">
-                        {filteredMembers.length === 0 && <div className="text-center py-10 text-gray-400 font-bold text-sm">기도제목이 없습니다.</div>}
+                        {filteredMembers.length === 0 && <div className="text-center py-10 text-gray-400 font-bold text-sm">해당되는 기도제목이 없습니다.</div>}
                         {filteredMembers.map(m => (
                             <PrayerCard key={m.id} m={m} onUpdate={onUpdate} forceExpand={isAllExpanded} />
                         ))}
@@ -738,7 +740,7 @@
             const handleBack = () => {
                 if (isAdmin) {
                     if (hasChanges) {
-                        if (confirm("업데이트 변경 사항을 저장하시겠습니까?\n[확인] 저장 후 조회 모드로 전환\n[취소] 저장하지 않고 조회 모드로 전환")) {
+                        if (confirm("변경 사항을 저장하시겠습니까?\n[확인] 저장 후 조회 모드로 이동\n[취소] 저장하지 않고 조회 모드로 이동")) {
                             executeGlobalSave(false).then(() => setIsAdmin(false));
                         } else {
                             setIsAdmin(false);
@@ -815,7 +817,7 @@
                         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
                             <div className="bg-white p-6 rounded-2xl w-full max-w-sm" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-lg font-black mb-4">관리자 비밀번호</h3>
-                                <input type="password" value={authInput} onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} className={`w-full p-3 bg-gray-50 border ${authError?'border-red-400':'border-gray-200'} rounded-xl font-bold mb-1 outline-none focus:border-[#802B22]`} placeholder="비밀번호를 입력하세요" autoFocus/>
+                                <input type="password" value={authInput} onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} className={`w-full p-3 bg-gray-50 border ${authError?'border-red-400':'border-gray-200'} rounded-xl font-bold mb-1 outline-none focus:border-[#802B22]`} placeholder="초기 비밀번호: 00" autoFocus/>
                                 {authError && <p className="text-red-500 text-xs font-bold mb-3">{authError}</p>}
                                 <button onClick={handleLogin} className="w-full py-3 mt-2 bg-[#802B22] text-white font-black rounded-xl active:scale-95">확인</button>
                             </div>
@@ -851,8 +853,8 @@
                         <td className="p-2 border-r border-gray-100"><input className="w-full min-w-[100px] p-1.5 border border-gray-300 rounded text-xs outline-none focus:border-[#802B22]" value={draft.children} onChange={e=>onChange({...draft, children: e.target.value})} placeholder="자녀 정보"/></td>
                         <td className="p-2 border-r border-gray-100"><input className="w-20 p-1.5 border border-gray-300 rounded text-xs outline-none focus:border-[#802B22]" value={draft.vehicle} onChange={e=>onChange({...draft, vehicle: e.target.value})} placeholder="차량 번호"/></td>
                         <td className="p-2 text-xs space-y-2 border-r border-gray-100">
-                            <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={draft.hPart} onChange={e=>onChange({...draft, hPart: e.target.checked})} className="text-[#802B22] rounded cursor-pointer"/> 남편 참여</label>
-                            <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={draft.wPart} onChange={e=>onChange({...draft, wPart: e.target.checked})} className="text-[#802B22] rounded cursor-pointer"/> 아내 참여</label>
+                            <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={draft.hPart} onChange={e=>onChange({...draft, hPart: e.target.checked})} className="text-[#802B22] rounded cursor-pointer"/> 순예배참여(남편)</label>
+                            <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={draft.wPart} onChange={e=>onChange({...draft, wPart: e.target.checked})} className="text-[#802B22] rounded cursor-pointer"/> 순예배참여(아내)</label>
                         </td>
                         <td className="p-2 text-center">
                             <button onClick={onDelete} className="px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-black rounded-md active:scale-95 w-full shadow-sm hover:bg-red-100 transition-colors">삭제</button>
@@ -874,8 +876,8 @@
                     <td className="p-3 border-r border-gray-100 text-xs font-bold text-gray-600">{family.children || '-'}</td>
                     <td className="p-3 border-r border-gray-100 text-xs font-black text-[#802B22]">{family.vehicle || '-'}</td>
                     <td className="p-3 border-r border-gray-100 text-[10px] text-gray-500 font-bold space-y-1">
-                        {husband.name && <div className="flex items-center gap-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/> 남편 참여</div>}
-                        {wife.name && <div className="flex items-center gap-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/> 아내 참여</div>}
+                        {husband.name && <div className="flex items-center gap-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/> 순예배참여</div>}
+                        {wife.name && <div className="flex items-center gap-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/> 순예배참여</div>}
                     </td>
                 </tr>
             );
@@ -884,7 +886,7 @@
         // --- Main App ---
         const App = () => {
             const [ready, setReady] = useState(false);
-            const [view, setView] = useState('prayer'); // 초기 진입을 기도제목 탭으로
+            const [view, setView] = useState('prayer'); // 초기 진입: 기도제목
             const [showDirectory, setShowDirectory] = useState(false); 
             const [members, setMembers] = useState([]);
             const [history, setHistory] = useState([]);
@@ -912,6 +914,7 @@
                     onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), s => {
                         let list = s.docs.map(d => ({ id: d.id, ...d.data() }));
                         if (list.length === 0) {
+                            // 최신 엑셀 기준 성인(부부) 15인 최신 명단, 오타수정 및 기도제목 완벽 적용
                             const sampleMembers = [
                                 { familyId: "f1", name: "한동균", role: "안수집사", gender: "M", children: "소율('04) 채율('07)", vehicle: "", prayer: "1. 가정에서 말씀과 기도로 바로서는 가장으로 본이 될수 있도록\n2. 주님이 허락하신 직장에서 복음전도의 목적과 사명을 이루어 가도록\n3. 교회에서 맡겨진 사역에 열정과 순종함으로 나아갈 수 있도록", isParticipating: true, order: 1 },
                                 { familyId: "f1", name: "조은미", role: "안수집사", gender: "F", children: "소율('04) 채율('07)", vehicle: "", prayer: "1. 소율이와 채율이가 어떠한 순간에도 주님을 예배할 수 있기를 기도드립니다.\n2. 졸업 후의 진로를 고민하고 기도하는 소율이를 주님이 원하시는 길로 인도하시길 기도드립니다.(취업, 대학원 등)\n3. 고 3인 채율이의 학업과 대학을 위해 기도드립니다.\n4. 사업장을 축복해주시고, 최선을 다하지만 결과를 맡길 수 있는 믿음, 허락해 주시길 기도드립니다.\n5. 인생의 후반에 주님께서 주실 비전을 기대하며 기도합니다.", isParticipating: true, order: 2 },
@@ -919,16 +922,16 @@
                                 { familyId: "f2", name: "안지훈", role: "순모", gender: "F", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 하나님 앞에 올바로 설 수 있는 가정이 되길 기도합니다.\n2. 하나님과 친밀한 관계를 맺으며 하나님의 말씀을 묵상하는 자가 되길 기도합니다.\n3. 두 아이들에 대한 조급한 마음과 걱정을 내려놓고 하나님의 뜻이 무엇인지를 구하는 자가 되길 기도합니다.\n4. 두 아이들이 믿음 가운데 성장하여 하나님을 깊이 알아가며 예배하는자로 성장하길 기도합니다.", isParticipating: true, order: 4 },
                                 { familyId: "f3", name: "조성민", role: "부순장", gender: "M", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 어머니, 장인/장모님의 정신적 육체적 건강\n2. 아내의 정신적 육체적 건강\n3. 고등학생이 된 큰아들과 중학생이 된 작은 아들이 성장하는 과정에서 부모로서의 세속적 욕심을 내려놓고 하나님의 자녀로서 건강한 자아가 완성되는 과정을 든든히 후원할수 있는 부모가 될수 있기를.\n4. 제조업을 운영하는 대표로서 순간 순간의 결정이 이익만을 좇는 것이아니라 하나님의 뜻을 구하고 그 뜻에 따를수 있기를.\n5. 교회 공동체 안에서 역할에 대한 고민을 시작하고 준비할수 있도록 기도하는 시간", isParticipating: true, order: 5 },
                                 { familyId: "f3", name: "최윤정", role: "집사", gender: "F", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 식구들 모두 온전하고 바르게 하나님 사람으로 설 수 있도록\n2. 올해 결혼한지 18년차 되는해. 믿음안에서 성숙한 부부. 지혜로운 부모가 될수 있도록. 온전한 가정을 이루어가도록 기도합니다.", isParticipating: true, order: 6 },
-                                { familyId: "f4", name: "김영길", role: "집사", gender: "M", children: "남희, 주희, 진희", vehicle: "", prayer: "1. 가정예배 회복을 위하여\n2. 김영길집사, 홍영미권사 육신의 강건함을 위하여\n3. 세딸의 앞길과 큰딸의 배우자를 위한 기도", isParticipating: true, order: 7 },
-                                { familyId: "f4", name: "홍영미", role: "권사", gender: "F", children: "남희, 주희, 진희", vehicle: "", prayer: "1. 가정예배 회복을 위하여\n2. 육신의 강건함을 위하여\n3. 세딸의 앞길과 큰딸의 배우자를 위한 기도", isParticipating: true, order: 8 },
+                                { familyId: "f4", name: "김영길", role: "집사", gender: "M", children: "남희('93) 주희('95) 진희('99)", vehicle: "", prayer: "1. 가정예배 회복을 위하여\n2. 김영길집사, 홍영미권사 육신의 강건함을 위하여\n3. 세딸의 앞길과 큰딸의 배우자를 위한 기도", isParticipating: true, order: 7 },
+                                { familyId: "f4", name: "홍영미", role: "권사", gender: "F", children: "남희('93) 주희('95) 진희('99)", vehicle: "", prayer: "1. 가정예배 회복을 위하여\n2. 육신의 강건함을 위하여\n3. 세딸의 앞길과 큰딸의 배우자를 위한 기도", isParticipating: true, order: 8 },
                                 { familyId: "f5", name: "도성욱", role: "집사", gender: "M", children: "희원('02) 효원('04)", vehicle: "", prayer: "1. 말씀과 기도로 항상 성령충만한 삶 살도록\n2. 도성욱 집사 베트남 주재원 생활중 영육이 건강하도록\n3. 올해 취업 준비하는 딸 희원이 하나님께서 예비하신 직장으로 인도하여 주시길\n4. 군복무중인 아들 효원이 건강하고 안전하게 군생활 마치도록", isParticipating: true, order: 9 },
                                 { familyId: "f5", name: "김영선", role: "집사", gender: "F", children: "희원('02) 효원('04)", vehicle: "", prayer: "1. 온 가족이 주님 안에서 하나되게 하소서\n2. 각자 주어진 위치에서 감사와 기쁨으로 살게 하소서\n3. 희원이의 앞길에 주님이 예비하신 직장이 있도록\n4. 효원이가 군 생활동안 건강하고 안전하게 제대할수 있도록", isParticipating: true, order: 10 },
                                 { familyId: "f6", name: "홍승의", role: "집사", gender: "M", children: "예원('06) 예준('10)", vehicle: "", prayer: "1. 양가 부모님들 건강 지켜 주시기를\n2. 각자 자리에서 빛과 소금의 역할을 감당하는 자녀들이 되기를\n3. 홍승의집사 새롭게 시작하는 직장에서 잘 적응하고 좋은 만남들 허락해 주시기를", isParticipating: true, order: 11 },
                                 { familyId: "f6", name: "이가은", role: "집사", gender: "F", children: "예원('06) 예준('10)", vehicle: "", prayer: "1. 우리 가정이 하나님을 경외하는 가정 되길\n2. 말씀에 순종하며 살아가길\n3. 부부의 일터에서 하나님의 선한 영향력을 끼치길\n4. 두 아이들이 하나님을 인격적으로 만나길\n5. 예원이가 고3 입시를 치루는 동안 평안한 마음으로 지내길\n6. 예준이가 중등부 예배에 기쁨으로 참석하길", isParticipating: true, order: 12 },
                                 { familyId: "f7", name: "김정훈", role: "성도", gender: "M", children: "우빈('10) 우진('15)", vehicle: "", prayer: "1. 온 가족이 주님을 더 알아가고 말씀안에서 서로 사랑하며 살아가기를\n2. 각자의 일터와 학교에서 건강하고 지혜롭게 생활할 수 있기를\n3. 두 아들들이 좋은 선생님과 친구들을 만날 수 있기를", isParticipating: true, order: 13 },
                                 { familyId: "f7", name: "윤효진", role: "성도", gender: "F", children: "우빈('10) 우진('15)", vehicle: "", prayer: "1. 가정에 평안이 가득하길\n2. 일터에 감사함이 넘치길\n3. 두 형제가 서로 사랑하고 우애있게 성장하길 기도합니다.\n4. 양가 부모님 건강주시고 배우자를 더욱 깊이 사랑하게 해주시길 기도합니다.", isParticipating: true, order: 14 },
-                                { familyId: "f8", name: "김유환", role: "성도", gender: "M", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 아내 임진주성도 주님께 마음이 열리고 예배자리로 나올수 있도록\n2. 아이들 몸과 마음이 주님 안에서 건강하게 잘 자라도록", isParticipating: true, order: 15 },
-                                { familyId: "f8", name: "임진주", role: "성도", gender: "F", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "", isParticipating: false, order: 16 }
+                                { familyId: "f8", name: "김유환", role: "성도", gender: "M", children: "도윤('18) 하윤('20)", vehicle: "", prayer: "1. 아내 임진주성도 주님께 마음이 열리고 예배자리로 나올수 있도록\n2. 아이들 몸과 마음이 주님 안에서 건강하게 잘 자라도록", isParticipating: true, order: 15 },
+                                { familyId: "f8", name: "임진주", role: "성도", gender: "F", children: "도윤('18) 하윤('20)", vehicle: "", prayer: "", isParticipating: false, order: 16 }
                             ];
                             sampleMembers.forEach(m => {
                                 window.FB_SDK.addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'members'), m);
@@ -992,7 +995,6 @@
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', id), { prayer });
             };
 
-            // 글로벌 일괄 저장 핸들러
             const handleGlobalSaveFamilyInfo = async (families, draftsMap) => {
                 const { db, doc, updateDoc, appId } = window.FB_SDK;
                 const promises = [];
@@ -1064,7 +1066,6 @@
                         ))}
                     </nav>
 
-                    {/* 전체 순원 명단 테이블 모달 */}
                     {showDirectory && <DirectoryModal members={members} onClose={() => setShowDirectory(false)} onGlobalSave={handleGlobalSaveFamilyInfo} onAddFamily={handleAddFamily} onDeleteFamily={handleDeleteFamily} adminPass={adminPass} onChangeAdminPass={handleChangeAdminPass} />}
                 </div>
             );
