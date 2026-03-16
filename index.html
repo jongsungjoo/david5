@@ -54,6 +54,7 @@
         /* Calendar Styles */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border-radius: 12px; transition: all 0.2s; position: relative; gap: 2px; }
+        .has-record::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
@@ -101,8 +102,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // 장소, 특이사항 데이터 구조 반영 v26
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v26';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v28';
 
         window.FB_SDK = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, appId };
         window.dispatchEvent(new Event('firebase-ready'));
@@ -148,7 +148,7 @@
             });
         };
 
-        // --- View 1: 순예배기록 (Calendar + History + Cumulative Finance) ---
+        // --- View 1: 순예배기록 ---
         const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const scrollRefs = useRef({});
@@ -215,42 +215,42 @@
                     </header>
 
                     {financeEditMode ? (
-                        <div className="max-w-2xl mx-auto">
-                            <Card className="border-4 border-[#802B22] bg-white relative z-20 fade-in p-8">
-                                <div className="flex justify-between items-center mb-8">
-                                    <h3 className="font-black text-xl md:text-2xl text-gray-800 flex items-center gap-2"><Icon name="edit-3" className="text-[#802B22] w-6 h-6"/> 누적순헌금 현황</h3>
-                                    <button onClick={() => setFinanceEditMode(false)} className="p-2 bg-gray-50 rounded-full text-gray-500 active:scale-95"><Icon name="x" className="w-6 h-6" /></button>
+                        <div className="max-w-2xl mx-auto w-full">
+                            <Card className="border-4 border-[#802B22] bg-white relative z-20 fade-in p-5 md:p-8">
+                                <div className="flex justify-between items-center mb-5 md:mb-8">
+                                    <h3 className="font-black text-lg md:text-2xl text-gray-800 flex items-center gap-2"><Icon name="edit-3" className="text-[#802B22] w-5 h-5 md:w-6 md:h-6"/> 누적순헌금 현황</h3>
+                                    <button onClick={() => setFinanceEditMode(false)} className="p-2 bg-gray-50 rounded-full text-gray-500 active:scale-95"><Icon name="x" className="w-5 h-5 md:w-6 md:h-6" /></button>
                                 </div>
-                                <div className="space-y-8">
-                                    <div>
-                                        <label className="text-sm font-black text-gray-400 uppercase tracking-widest block mb-3">전학기 이월금</label>
-                                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl">
-                                            <input type="number" value={carry} onChange={e => setCarry(e.target.value)} className="flex-1 p-4 bg-white rounded-xl font-bold text-lg outline-none text-right border border-gray-100" placeholder="이월금을 입력하세요" />
-                                            <span className="text-lg font-bold text-gray-500 pr-2">원</span>
+                                <div className="space-y-6 md:space-y-8">
+                                    <div className="w-full">
+                                        <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-2 md:mb-3">전학기 이월금</label>
+                                        <div className="flex items-center gap-2 bg-gray-50 p-2 md:p-3 rounded-xl w-full">
+                                            <input type="number" value={carry} onChange={e => setCarry(e.target.value)} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-white rounded-xl font-bold text-base md:text-lg outline-none text-right border border-gray-100" placeholder="이월금을 입력하세요" />
+                                            <span className="text-base md:text-lg font-bold text-gray-500 pr-2 shrink-0 whitespace-nowrap">원</span>
                                         </div>
                                     </div>
-                                    <div className="border-t-2 border-gray-50 pt-6">
-                                        <label className="text-sm font-black text-gray-400 uppercase tracking-widest block mb-4">순헌금 내역 (순헌금의 40%)</label>
-                                        <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                                            {history.length === 0 && <div className="text-base text-gray-400 font-bold text-center py-6">기록된 헌금 내역이 없습니다.</div>}
+                                    <div className="border-t-2 border-gray-50 pt-4 md:pt-6 w-full">
+                                        <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-3 md:mb-4">순헌금 내역 (순헌금의 40%)</label>
+                                        <div className="space-y-3 md:space-y-4 max-h-[40vh] overflow-y-auto pr-1 md:pr-2 custom-scrollbar w-full">
+                                            {history.length === 0 && <div className="text-sm md:text-base text-gray-400 font-bold text-center py-6">기록된 헌금 내역이 없습니다.</div>}
                                             {history.map(h => (
-                                                <div key={h.id} className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                                    <span className="text-base font-black text-[#802B22] w-28 shrink-0 text-center">{h.date}</span>
-                                                    <div className="flex flex-col flex-1">
+                                                <div key={h.id} className="flex items-center gap-2 md:gap-4 bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-100 w-full overflow-hidden">
+                                                    <span className="text-sm md:text-base font-black text-[#802B22] w-16 md:w-28 shrink-0 text-center">{h.date.substring(5)}</span>
+                                                    <div className="flex flex-col flex-1 min-w-0">
                                                         <input
                                                             type="number"
                                                             value={edits[h.id] !== undefined ? edits[h.id] : h.offering}
                                                             onChange={e => setEdits({...edits, [h.id]: e.target.value})}
-                                                            className="p-3 bg-white rounded-xl font-bold text-lg outline-none text-right border border-gray-200 focus:border-[#802B22]"
+                                                            className="p-2.5 md:p-3 bg-white rounded-xl font-bold text-base md:text-lg outline-none text-right border border-gray-200 focus:border-[#802B22] min-w-0 w-full"
                                                             placeholder="총 헌금액"
                                                         />
-                                                        <span className="text-xs font-bold text-gray-400 text-right mt-1.5">40% 적용: ₩{Math.floor((edits[h.id] !== undefined ? edits[h.id] : h.offering) * 0.4).toLocaleString()}</span>
+                                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 text-right mt-1.5 truncate">40%: ₩{Math.floor((edits[h.id] !== undefined ? edits[h.id] : h.offering) * 0.4).toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                    <button onClick={handleSaveFinance} className="w-full py-5 bg-[#802B22] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-xl hover:bg-[#6c231c]">누적합 적용 및 저장</button>
+                                    <button onClick={handleSaveFinance} className="w-full py-4 md:py-5 bg-[#802B22] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-lg md:text-xl hover:bg-[#6c231c]">누적합 적용 및 저장</button>
                                 </div>
                             </Card>
                         </div>
@@ -342,7 +342,6 @@
                                                 </div>
                                             </div>
                                             
-                                            {/* 추가된 장소 및 특이사항 표시 영역 */}
                                             {(h.location || h.notes) && (
                                                 <div className="pt-2 border-t border-gray-50 flex flex-col gap-2">
                                                     {h.location && (
@@ -388,7 +387,6 @@
                                         </div>
                                         <input type="number" placeholder="당일 총 헌금액 (목록엔 40% 자동계산됨)" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
-                                        {/* 장소 및 특이사항 입력란 추가 */}
                                         <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={newRecord.location || ""} onChange={e => setNewRecord({...newRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={newRecord.notes || ""} onChange={e => setNewRecord({...newRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
 
@@ -425,7 +423,6 @@
                                     </div>
                                     <input type="number" placeholder="당일 총 헌금액" value={editingRecord.offering} onChange={e => setEditingRecord({...editingRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                     
-                                    {/* 장소 및 특이사항 입력란 추가 */}
                                     <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={editingRecord.location || ""} onChange={e => setEditingRecord({...editingRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                     <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={editingRecord.notes || ""} onChange={e => setEditingRecord({...editingRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
 
@@ -446,7 +443,7 @@
             );
         };
 
-        // --- View 2: 순예배안내 (Worship Guide - 주보 스타일 적용) ---
+        // --- View 2: 예배안내 (Worship Guide) ---
         const BulletinRow = ({ label, children, align = "text-left" }) => (
             <div className="flex items-baseline justify-between py-3 md:py-4 group">
                 <span className="font-black text-[#802B22] text-lg md:text-xl tracking-[0.2em] shrink-0 whitespace-nowrap">{label}</span>
@@ -476,7 +473,7 @@
             const save = () => { onUpdateGuide(form); setIsEditing(false); alert("예배 안내가 저장되었습니다."); };
 
             return (
-                <div className="space-y-6 animate-slide-up">
+                <div className="space-y-6 animate-slide-up pb-10">
                     <header className="flex justify-between items-center px-1">
                         <div><span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">Guide</span><h1 className="text-2xl font-black mt-1">순예배 안내</h1></div>
                         <button onClick={() => isEditing ? save() : setIsEditing(true)} className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all ${isEditing ? 'bg-green-600 text-white shadow-md hover:bg-green-700' : 'bg-gray-800 text-white opacity-90 hover:opacity-100'}`}>
@@ -484,16 +481,13 @@
                         </button>
                     </header>
 
-                    {/* 가로 화면 대응 2단 그리드 분할 (7:5 비율) */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                        
                         {/* 왼쪽: 주보 스타일 예배 순서 */}
                         <div className="lg:col-span-7 bulletin-border p-6 md:p-10 rounded-xl shadow-sm">
                             <h3 className="text-2xl md:text-3xl font-black text-center text-[#802B22] mb-8 tracking-[0.3em]">순예배 순서</h3>
                             
                             <div className="space-y-1">
-                                
-                                {/* 1. 순PRS (상단 배치) */}
+                                {/* 1. 순PRS */}
                                 {isEditing ? (
                                     <div className="py-4 border-b border-dashed border-gray-200">
                                         <label className="font-black text-[#802B22] text-lg mb-2 block">순 P R S</label>
@@ -565,14 +559,14 @@
                                     </div>
                                 ) : (
                                     <BulletinRow label="성 경 봉 독" align="text-right">
-                                        <button onClick={() => form.bibleContent && setFullScreenBible(true)} className="flex items-center justify-end gap-1.5 text-gray-800 hover:text-[#802B22] transition-colors break-words w-full text-right">
+                                        <button onClick={() => form.bibleContent && setFullScreenBible(true)} className="flex items-center justify-end gap-1.5 text-gray-800 hover:text-[#802B22] transition-colors break-words w-full text-right outline-none">
                                             <span className="underline underline-offset-4 decoration-gray-300 decoration-2">{form.bibleVerse || "구절 입력"}</span>
                                             {form.bibleContent && <Icon name="maximize-2" className="w-4 h-4 text-gray-400 shrink-0" />}
                                         </button>
                                     </BulletinRow>
                                 )}
 
-                                {/* 5. 적용과 나눔 (좌측 정렬 적용) */}
+                                {/* 5. 적용과 나눔 */}
                                 {isEditing ? (
                                     <div className="py-4 border-b border-dashed border-gray-200">
                                         <label className="font-black text-[#802B22] text-lg mb-2 block">적 용 및 나 눔</label>
@@ -584,7 +578,7 @@
                                     </BulletinRow>
                                 )}
 
-                                {/* 6. 헌 금 (New) */}
+                                {/* 6. 헌 금 */}
                                 <BulletinRow label="헌 금" align="text-right">다 함 께</BulletinRow>
 
                                 {/* 7. 마무리기도 */}
@@ -660,12 +654,12 @@
             const [isExpanded, setIsExpanded] = useState(false);
             const [draft, setDraft] = useState(m.prayer || "");
             
+            const tags = extractTags(m.prayer);
+
             useEffect(() => {
                 setIsExpanded(forceExpand);
                 if (!forceExpand) setIsEditing(false);
             }, [forceExpand]);
-
-            const tags = extractTags(m.prayer);
 
             const handleSave = () => {
                 onUpdate(m.id, draft);
@@ -683,8 +677,8 @@
                                     {m.role && <span className="text-sm font-bold text-gray-400">{m.role}</span>}
                                 </div>
                                 {tags.length > 0 && !isEditing && (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {tags.map(tag => <span key={tag} className="text-xs font-black bg-gray-100 text-gray-500 px-2.5 py-1 rounded-md border border-gray-200">#{tag}</span>)}
+                                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                        {tags.map(tag => <span key={tag} className="text-[10px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md border border-gray-200">#{tag}</span>)}
                                     </div>
                                 )}
                             </div>
@@ -760,9 +754,11 @@
 
             return (
                 <div className="space-y-6 animate-slide-up pb-6">
-                    <header className="px-1">
-                        <span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">PRAYER REQUEST</span>
-                        <h1 className="text-2xl font-black mt-1">순기도제목</h1>
+                    <header className="px-1 flex justify-between items-end">
+                        <div>
+                            <span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">PRAYER REQUEST</span>
+                            <h1 className="text-2xl font-black mt-1">순기도제목</h1>
+                        </div>
                     </header>
 
                     {/* 분석된 태그 필터 영역 */}
@@ -773,16 +769,19 @@
                         ))}
                     </div>
 
-                    <div className="flex justify-end px-1">
+                    <div className="flex justify-between items-center px-1">
+                        <span className="text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
+                            참여 {activeMembers.length}명 중 {activeMembers.filter(m => m.prayer).length}명 나눔
+                        </span>
                         <button onClick={() => setIsAllExpanded(!isAllExpanded)} className="text-sm font-black text-[#802B22] flex items-center gap-1.5 bg-red-50 px-4 py-2 rounded-xl active:scale-95 transition-transform shadow-sm hover:bg-red-100 border border-red-100">
                             <Icon name={isAllExpanded ? "chevrons-up" : "chevrons-down"} className="w-4 h-4" />
-                            {isAllExpanded ? "순기도제목 모두 접기" : "순기도제목 모두 펼치기"}
+                            {isAllExpanded ? "모두 접기" : "모두 펼치기"}
                         </button>
                     </div>
 
                     {/* 벽돌(Masonry) 레이아웃 적용 */}
-                    <div className="columns-1 md:columns-2 lg:columns-3 gap-6 w-full">
-                        {filteredMembers.length === 0 && <div className="text-center py-12 text-gray-400 font-bold text-base w-full block">해당되는 순기도제목이 없습니다.</div>}
+                    <div className="columns-1 md:columns-2 lg:columns-3 gap-6 w-full mt-4">
+                        {filteredMembers.length === 0 && <div className="text-center py-12 text-gray-400 font-bold text-base w-full block col-span-full">해당되는 순기도제목이 없습니다.</div>}
                         {filteredMembers.map(m => (
                             <div key={m.id} className="break-inside-avoid mb-6 w-full block">
                                 <PrayerCard m={m} onUpdate={onUpdate} forceExpand={isAllExpanded} />
@@ -794,6 +793,83 @@
         };
 
         // --- View 4: 가족 단위 명단(테이블) 모달 ---
+        const MobileDirectoryCard = ({ family, isAdmin, draft, onChange, onDelete }) => {
+            if (isAdmin && draft) {
+                return (
+                    <div className="bg-blue-50/20 p-4 rounded-xl border border-blue-200 flex flex-col gap-3 shadow-sm">
+                        <div className="flex flex-col gap-3">
+                            <div className="bg-white p-3 rounded-lg border border-blue-100">
+                                <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5 block">남편</span>
+                                <div className="flex gap-2 mb-2 w-full">
+                                    <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hName} onChange={e=>onChange({...draft, hName: e.target.value})} placeholder="이름" />
+                                    <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hRole} onChange={e=>onChange({...draft, hRole: e.target.value})} placeholder="직분" />
+                                </div>
+                                <label className="flex items-center gap-2 cursor-pointer pt-1"><input type="checkbox" checked={draft.hPart} onChange={e=>onChange({...draft, hPart: e.target.checked})} className="text-[#802B22] w-4 h-4 rounded cursor-pointer"/><span className="text-xs font-bold text-gray-700">순예배참여</span></label>
+                            </div>
+                            <div className="bg-white p-3 rounded-lg border border-blue-100">
+                                <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5 block">아내</span>
+                                <div className="flex gap-2 mb-2 w-full">
+                                    <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wName} onChange={e=>onChange({...draft, wName: e.target.value})} placeholder="이름" />
+                                    <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wRole} onChange={e=>onChange({...draft, wRole: e.target.value})} placeholder="직분" />
+                                </div>
+                                <label className="flex items-center gap-2 cursor-pointer pt-1"><input type="checkbox" checked={draft.wPart} onChange={e=>onChange({...draft, wPart: e.target.checked})} className="text-[#802B22] w-4 h-4 rounded cursor-pointer"/><span className="text-xs font-bold text-gray-700">순예배참여</span></label>
+                            </div>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-blue-100 flex flex-col gap-2">
+                            <div className="w-full">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">자녀정보</span>
+                                <input className="w-full p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] min-w-0 font-bold" value={draft.children} onChange={e=>onChange({...draft, children: e.target.value})} placeholder="자녀 (예: 소율('04) 채율('07))" />
+                            </div>
+                            <div className="w-full">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">차량정보</span>
+                                <input className="w-full p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] min-w-0 font-bold" value={draft.vehicle} onChange={e=>onChange({...draft, vehicle: e.target.value})} placeholder="차량 번호" />
+                            </div>
+                        </div>
+                        <button onClick={onDelete} className="w-full py-3 mt-1 bg-white text-red-600 rounded-lg font-black text-sm active:scale-95 transition-transform border border-red-200 shadow-sm">이 가족 전체 삭제</button>
+                    </div>
+                );
+            }
+
+            const husband = family.husband || {};
+            const wife = family.wife || {};
+            return (
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-4">
+                    <div className="grid grid-cols-2 gap-4 divide-x divide-gray-100">
+                        <div className={`flex flex-col gap-1.5 ${!husband.isParticipating ? 'opacity-40' : ''}`}>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">남편</span>
+                            {husband.name ? (
+                                <div className="flex flex-col">
+                                    <span className="font-black text-gray-800 text-lg">{husband.name}</span>
+                                    <span className="text-xs text-gray-500 font-bold">{husband.role}</span>
+                                </div>
+                            ) : <span className="text-gray-400 text-sm font-bold">-</span>}
+                            {husband.name && <div className="flex items-center gap-1 mt-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{husband.isParticipating ? '참여' : '미참여'}</span></div>}
+                        </div>
+                        <div className={`flex flex-col gap-1.5 pl-4 ${!wife.isParticipating ? 'opacity-40' : ''}`}>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">아내</span>
+                            {wife.name ? (
+                                <div className="flex flex-col">
+                                    <span className="font-black text-gray-800 text-lg">{wife.name}</span>
+                                    <span className="text-xs text-gray-500 font-bold">{wife.role}</span>
+                                </div>
+                            ) : <span className="text-gray-400 text-sm font-bold">-</span>}
+                            {wife.name && <div className="flex items-center gap-1 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{wife.isParticipating ? '참여' : '미참여'}</span></div>}
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
+                        <div className="flex items-start gap-2">
+                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest w-12 shrink-0 mt-0.5">자녀</span>
+                            <span className="text-sm font-bold text-gray-700 leading-snug">{family.children || '-'}</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest w-12 shrink-0 mt-0.5">차량</span>
+                            <span className="text-sm font-black text-[#802B22]">{family.vehicle || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const DirectoryModal = ({ members, onClose, onGlobalSave, onAddFamily, onDeleteFamily, adminPass, onChangeAdminPass }) => {
             const [isAdmin, setIsAdmin] = useState(false);
             const [authInput, setAuthInput] = useState('');
@@ -882,12 +958,12 @@
                             </div>
                             {isAdmin ? (
                                 <div className="flex gap-2">
-                                    <button onClick={() => setShowChangePwd(true)} className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-black rounded-lg active:scale-95 hover:bg-gray-200">비번변경</button>
+                                    <button onClick={() => setShowChangePwd(true)} className="hidden sm:block px-4 py-2 bg-gray-100 text-gray-600 text-xs font-black rounded-lg active:scale-95 hover:bg-gray-200">비번변경</button>
                                     <button onClick={async () => {
                                         if (hasChanges) await executeGlobalSave(false);
                                         onAddFamily();
-                                    }} className="px-4 py-2 bg-gray-800 text-white text-xs font-black rounded-lg active:scale-95 hover:bg-gray-900">새 가족 추가</button>
-                                    <button onClick={() => executeGlobalSave(true)} className="px-4 py-2 bg-[#802B22] text-white text-sm font-black rounded-lg active:scale-95 shadow-md flex items-center gap-1.5 hover:bg-[#6c231c]"><Icon name="save" className="w-4 h-4"/>업데이트 저장</button>
+                                    }} className="px-3 md:px-4 py-2 bg-gray-800 text-white text-xs font-black rounded-lg active:scale-95 hover:bg-gray-900">새 가족 추가</button>
+                                    <button onClick={() => executeGlobalSave(true)} className="px-3 md:px-4 py-2 bg-[#802B22] text-white text-sm font-black rounded-lg active:scale-95 shadow-md flex items-center gap-1.5 hover:bg-[#6c231c]"><Icon name="save" className="w-4 h-4"/>업데이트 저장</button>
                                 </div>
                             ) : (
                                 <button onClick={() => setShowAuth(true)} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-black rounded-lg active:scale-95 flex items-center gap-1.5 hover:bg-gray-50 shadow-sm"><Icon name="lock" className="w-4 h-4"/> 관리자 편집</button>
@@ -895,14 +971,34 @@
                         </div>
                     </header>
 
-                    <div className="flex-1 overflow-auto p-4 safe-bottom flex flex-col items-center custom-scrollbar">
+                    <div className="flex-1 overflow-auto p-4 md:p-6 safe-bottom flex flex-col items-center custom-scrollbar">
                         <div className="w-full max-w-6xl">
                             {isAdmin && (
-                                <div className="bg-red-50 border border-red-100 p-4 rounded-xl mb-4 text-sm text-red-600 font-bold leading-relaxed shadow-sm">
-                                    💡 관리자 편집 모드입니다. 표에 직접 내용을 수정하신 후 반드시 상단 <strong className="text-[#802B22]">[업데이트 저장]</strong> 버튼을 눌러주세요.
+                                <div className="bg-red-50 border border-red-100 p-4 rounded-xl mb-4 text-sm text-red-600 font-bold leading-relaxed shadow-sm flex justify-between items-center">
+                                    <span>💡 관리자 편집 모드입니다. 변경 후 상단 <strong className="text-[#802B22]">[업데이트 저장]</strong>을 눌러주세요.</span>
+                                    <button onClick={() => setShowChangePwd(true)} className="sm:hidden px-3 py-1.5 bg-white text-gray-600 text-xs font-black rounded-md border border-red-200 active:scale-95">비번변경</button>
                                 </div>
                             )}
-                            <div className="w-full overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white custom-scrollbar">
+                            
+                            {/* Mobile View (Cards) */}
+                            <div className="md:hidden flex flex-col gap-4">
+                                {groupedFamilies.map(f => (
+                                    <MobileDirectoryCard 
+                                        key={f.id} 
+                                        family={f} 
+                                        isAdmin={isAdmin} 
+                                        draft={drafts[f.id]}
+                                        onChange={(newDraft) => {
+                                            setDrafts(prev => ({...prev, [f.id]: newDraft}));
+                                            setHasChanges(true);
+                                        }}
+                                        onDelete={() => onDeleteFamily(f.id)} 
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Desktop View (Table) */}
+                            <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white custom-scrollbar">
                                 <table className="w-full min-w-[800px] text-base text-left whitespace-nowrap">
                                     <thead className="bg-gray-100 text-gray-600 font-black text-sm uppercase">
                                         <tr>
@@ -910,24 +1006,52 @@
                                             <th className="p-4 border-b border-gray-200 w-40">아내</th>
                                             <th className="p-4 border-b border-gray-200">자녀</th>
                                             <th className="p-4 border-b border-gray-200">차량정보</th>
-                                            <th className="p-4 border-b border-gray-200 text-center">순예배참여</th>
                                             {isAdmin && <th className="p-4 border-b border-gray-200 text-center w-20">관리</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {groupedFamilies.map(f => (
-                                            <DirectoryRow 
-                                                key={f.id} 
-                                                family={f} 
-                                                isAdmin={isAdmin} 
-                                                draft={drafts[f.id]}
-                                                onChange={(newDraft) => {
-                                                    setDrafts(prev => ({...prev, [f.id]: newDraft}));
-                                                    setHasChanges(true);
-                                                }}
-                                                onDelete={() => onDeleteFamily(f.id)} 
-                                            />
-                                        ))}
+                                        {groupedFamilies.map(f => {
+                                            const draft = drafts[f.id];
+                                            const husband = f.husband || {};
+                                            const wife = f.wife || {};
+                                            
+                                            if (isAdmin && draft) {
+                                                return (
+                                                    <tr key={f.id} className="bg-blue-50/10 hover:bg-blue-50/30 transition-colors">
+                                                        <td className="p-3 border-r border-gray-100">
+                                                            <input className="w-24 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] mb-1.5 font-bold" value={draft.hName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
+                                                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
+                                                            <label className="flex items-center gap-1.5 cursor-pointer mt-2"><input type="checkbox" checked={draft.hPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-600">참여</span></label>
+                                                        </td>
+                                                        <td className="p-3 border-r border-gray-100">
+                                                            <input className="w-24 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] mb-1.5 font-bold" value={draft.wName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
+                                                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
+                                                            <label className="flex items-center gap-1.5 cursor-pointer mt-2"><input type="checkbox" checked={draft.wPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-600">참여</span></label>
+                                                        </td>
+                                                        <td className="p-3 border-r border-gray-100"><input className="w-full min-w-[150px] p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.children} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, children: e.target.value}})); setHasChanges(true);}} placeholder="자녀 정보"/></td>
+                                                        <td className="p-3 border-r border-gray-100"><input className="w-32 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.vehicle} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, vehicle: e.target.value}})); setHasChanges(true);}} placeholder="차량 번호"/></td>
+                                                        <td className="p-3 text-center">
+                                                            <button onClick={() => onDeleteFamily(f.id)} className="px-4 py-2 bg-red-50 text-red-600 text-xs font-black rounded-lg active:scale-95 w-full shadow-sm hover:bg-red-100 transition-colors">삭제</button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+
+                                            return (
+                                                <tr key={f.id} className="hover:bg-gray-50 transition-colors">
+                                                    <td className={`p-4 border-r border-gray-100 ${!husband.isParticipating ? 'opacity-40' : ''}`}>
+                                                        {husband.name ? <div className="font-black text-gray-800 text-base">{husband.name} <span className="font-bold text-gray-400 text-xs ml-1">{husband.role}</span></div> : '-'}
+                                                        {husband.name && <div className="flex items-center gap-1.5 mt-1.5"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500">{husband.isParticipating?'참여':'미참여'}</span></div>}
+                                                    </td>
+                                                    <td className={`p-4 border-r border-gray-100 ${!wife.isParticipating ? 'opacity-40' : ''}`}>
+                                                        {wife.name ? <div className="font-black text-gray-800 text-base">{wife.name} <span className="font-bold text-gray-400 text-xs ml-1">{wife.role}</span></div> : '-'}
+                                                        {wife.name && <div className="flex items-center gap-1.5 mt-1.5"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500">{wife.isParticipating?'참여':'미참여'}</span></div>}
+                                                    </td>
+                                                    <td className="p-4 border-r border-gray-100 text-sm font-bold text-gray-600">{f.children || '-'}</td>
+                                                    <td className="p-4 border-r border-gray-100 text-sm font-black text-[#802B22]">{f.vehicle || '-'}</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -960,55 +1084,10 @@
             );
         };
 
-        const DirectoryRow = ({ family, isAdmin, draft, onChange, onDelete }) => {
-            if (isAdmin && draft) {
-                return (
-                    <tr className="bg-blue-50/10 hover:bg-blue-50/30 transition-colors">
-                        <td className="p-3 border-r border-gray-100">
-                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] mb-1.5" value={draft.hName} onChange={e=>onChange({...draft, hName: e.target.value})} placeholder="이름"/>
-                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22]" value={draft.hRole} onChange={e=>onChange({...draft, hRole: e.target.value})} placeholder="직분"/>
-                        </td>
-                        <td className="p-3 border-r border-gray-100">
-                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] mb-1.5" value={draft.wName} onChange={e=>onChange({...draft, wName: e.target.value})} placeholder="이름"/>
-                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22]" value={draft.wRole} onChange={e=>onChange({...draft, wRole: e.target.value})} placeholder="직분"/>
-                        </td>
-                        <td className="p-3 border-r border-gray-100"><input className="w-full min-w-[150px] p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22]" value={draft.children} onChange={e=>onChange({...draft, children: e.target.value})} placeholder="자녀 정보"/></td>
-                        <td className="p-3 border-r border-gray-100"><input className="w-28 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22]" value={draft.vehicle} onChange={e=>onChange({...draft, vehicle: e.target.value})} placeholder="차량 번호"/></td>
-                        <td className="p-3 text-sm space-y-2.5 border-r border-gray-100">
-                            <label className="flex items-center gap-2 cursor-pointer font-bold"><input type="checkbox" checked={draft.hPart} onChange={e=>onChange({...draft, hPart: e.target.checked})} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/> 남편 참여</label>
-                            <label className="flex items-center gap-2 cursor-pointer font-bold"><input type="checkbox" checked={draft.wPart} onChange={e=>onChange({...draft, wPart: e.target.checked})} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/> 아내 참여</label>
-                        </td>
-                        <td className="p-3 text-center">
-                            <button onClick={onDelete} className="px-4 py-2 bg-red-50 text-red-600 text-xs font-black rounded-lg active:scale-95 w-full shadow-sm hover:bg-red-100 transition-colors">삭제</button>
-                        </td>
-                    </tr>
-                );
-            }
-
-            const husband = family.husband || {};
-            const wife = family.wife || {};
-            return (
-                <tr className="hover:bg-gray-50 transition-colors">
-                    <td className={`p-4 border-r border-gray-100 ${!husband.isParticipating ? 'opacity-30' : ''}`}>
-                        {husband.name ? <div className="font-black text-gray-800 text-base">{husband.name} <span className="font-bold text-gray-400 text-xs ml-1">{husband.role}</span></div> : '-'}
-                    </td>
-                    <td className={`p-4 border-r border-gray-100 ${!wife.isParticipating ? 'opacity-30' : ''}`}>
-                        {wife.name ? <div className="font-black text-gray-800 text-base">{wife.name} <span className="font-bold text-gray-400 text-xs ml-1">{wife.role}</span></div> : '-'}
-                    </td>
-                    <td className="p-4 border-r border-gray-100 text-sm font-bold text-gray-600">{family.children || '-'}</td>
-                    <td className="p-4 border-r border-gray-100 text-sm font-black text-[#802B22]">{family.vehicle || '-'}</td>
-                    <td className="p-4 border-r border-gray-100 text-xs text-gray-500 font-bold space-y-1.5">
-                        {husband.name && <div className="flex items-center gap-1.5"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/> 순예배참여</div>}
-                        {wife.name && <div className="flex items-center gap-1.5"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/> 순예배참여</div>}
-                    </td>
-                </tr>
-            );
-        };
-
         // --- Main App ---
         const App = () => {
             const [ready, setReady] = useState(false);
-            const [view, setView] = useState('prayer'); // 초기 진입: 순기도제목
+            const [view, setView] = useState('prayer');
             const [showDirectory, setShowDirectory] = useState(false); 
             const [members, setMembers] = useState([]);
             const [history, setHistory] = useState([]);
@@ -1043,16 +1122,16 @@
                                 { familyId: "f2", name: "안지훈", role: "순모", gender: "F", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 하나님 앞에 올바로 설 수 있는 가정이 되길 기도합니다.\n2. 하나님과 친밀한 관계를 맺으며 하나님의 말씀을 묵상하는 자가 되길 기도합니다.\n3. 두 아이들에 대한 조급한 마음과 걱정을 내려놓고 하나님의 뜻이 무엇인지를 구하는 자가 되길 기도합니다.\n4. 두 아이들이 믿음 가운데 성장하여 하나님을 깊이 알아가며 예배하는자로 성장하길 기도합니다.", isParticipating: true, order: 4 },
                                 { familyId: "f3", name: "조성민", role: "부순장", gender: "M", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 어머니, 장인/장모님의 정신적 육체적 건강\n2. 아내의 정신적 육체적 건강\n3. 고등학생이 된 큰아들과 중학생이 된 작은 아들이 성장하는 과정에서 부모로서의 세속적 욕심을 내려놓고 하나님의 자녀로서 건강한 자아가 완성되는 과정을 든든히 후원할수 있는 부모가 될수 있기를.\n4. 제조업을 운영하는 대표로서 순간 순간의 결정이 이익만을 좇는 것이아니라 하나님의 뜻을 구하고 그 뜻에 따를수 있기를.\n5. 교회 공동체 안에서 역할에 대한 고민을 시작하고 준비할수 있도록 기도하는 시간", isParticipating: true, order: 5 },
                                 { familyId: "f3", name: "최윤정", role: "집사", gender: "F", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 식구들 모두 온전하고 바르게 하나님 사람으로 설 수 있도록\n2. 올해 결혼한지 20년인데 그 시간만큼 잘 지내왔는지 부부가 함께 돌아보는 기회를 가지길 & 앞으로도 건강한 가정을 이루는데 함께 힘쓰길\n3. 윤성이와 정민이가 예배공동체에 잘 참여해서 감사 그곳에서 믿음과 인생의 멘토를 만나길", isParticipating: true, order: 6 },
-                                { familyId: "f4", name: "최성섭", role: "집사", gender: "M", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님께서 인정하시는 믿음의 가정이 되도록.\n2. 윤호가 하나님께서 주시는 비전을 가슴에 품고 열심히 공부하고 생활하도록\n3. 슬기가 예배를 회복하고 친구들과의 관계도 원만하길.\n4. 지호가 예수님의 성품을 닮아가며 조급해하지 않도록", isParticipating: true, order: 7 },
-                                { familyId: "f4", name: "황현선", role: "권찰", gender: "F", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "", isParticipating: true, order: 8 },
+                                { familyId: "f4", name: "최성섭", role: "성도", gender: "M", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님께서 인정하시는 믿음의 가정이 되도록.\n2. 윤호가 하나님께서 주시는 비전을 가슴에 품고 열심히 공부하고 생활하도록\n3. 슬기가 예배를 회복하고 친구들과의 관계도 원만하길.\n4. 지호가 예수님의 성품을 닮아가며 조급해하지 않도록", isParticipating: true, order: 7 },
+                                { familyId: "f4", name: "황현선", role: "권찰", gender: "F", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님의 뜻을 구하며, 일상의 삶 속에서 동행하심을 느낄 수 있도록", isParticipating: true, order: 8 },
                                 { familyId: "f5", name: "곽경태", role: "집사", gender: "M", children: "찬영('16) 예찬('16)", vehicle: "", prayer: "1. 그리스도로 하나되는 가정 이루게 하여주시고 제가 더 남편으로써 부모로써 주님을 사랑하고 따르도록 인도하여 주시고 내가 하는 모든일에 항상 감사하고 살 수 있도록 인도하여주세요.\n2. 물질로 감사할때 주변을 돌볼수있는 여유를 더해 주시고 크리스찬으로서 선한영향력을 펼칠수있는자 되기를 기도합니다.\n3. 주를 더 알기 소망하며 가까이 갈 수 있도록 인도하여주시고 아이들과 크리스찬다운 삶을 살 수 있도록 기도합니다.", isParticipating: true, order: 9 },
-                                { familyId: "f5", name: "", role: "", gender: "F", children: "찬영('16) 예찬('16)", vehicle: "", prayer: "", isParticipating: false, order: 10 },
-                                { familyId: "f6", name: "이희용", role: "집사", gender: "M", children: "성욱('15)", vehicle: "", prayer: "", isParticipating: true, order: 11 },
+                                { familyId: "f5", name: "신경아", role: "성도", gender: "F", children: "찬영('16) 예찬('16)", vehicle: "", prayer: "1. 남편과 아이들이 주님 안에서 믿음으로 바로 설 수 있도록\n2. 새로운 사업장이 잘 자리잡고 안정될 수 있도록 기도합니다.", isParticipating: true, order: 10 },
+                                { familyId: "f6", name: "이희용", role: "집사", gender: "M", children: "성욱('15)", vehicle: "", prayer: "1. 가정에 평안과 감사가 넘치기를 기도합니다.", isParticipating: true, order: 11 },
                                 { familyId: "f6", name: "김희승", role: "집사", gender: "F", children: "성욱('15)", vehicle: "", prayer: "1. 주께서 부르신 이 공동체에 잘 정착하길 기도 합니다.\n2. 주께서 주신 귀한 선물 사랑하는 아들 성욱이가 온전히 주님만 바라보고 주님 품 안에서 건강하게 성장하며, 열방에 큰 쓰임을 받길 기도합니다.\n3. 주님, 기도 제목을 나눌수 있게 해주셔서 감사합니다.", isParticipating: true, order: 12 },
-                                { familyId: "f7", name: "김재학", role: "집사", gender: "M", children: "하은('16)", vehicle: "", prayer: "", isParticipating: true, order: 13 },
-                                { familyId: "f7", name: "안나경", role: "집사", gender: "F", children: "하은('16)", vehicle: "", prayer: "", isParticipating: true, order: 14 },
-                                { familyId: "f8", name: "김정록", role: "집사", gender: "M", children: "나은('17)", vehicle: "", prayer: "", isParticipating: true, order: 15 },
-                                { familyId: "f8", name: "임은정", role: "집사", gender: "F", children: "나은('17)", vehicle: "", prayer: "", isParticipating: true, order: 16 }
+                                { familyId: "f7", name: "김재학", role: "집사", gender: "M", children: "하은('16)", vehicle: "", prayer: "1. 영육간의 강건함을 주시기를\n2. 직장에서의 관계와 업무가 순탄하게 진행되기를 기도합니다.", isParticipating: true, order: 13 },
+                                { familyId: "f7", name: "안나경", role: "집사", gender: "F", children: "하은('16)", vehicle: "", prayer: "1. 하은이가 하나님을 깊이 만나고 믿음으로 자라길 기도합니다.", isParticipating: true, order: 14 },
+                                { familyId: "f8", name: "김유환", role: "성도", gender: "M", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 아내 임진주성도 주님께 마음이 열리고 예배자리로 나올수 있도록\n2. 아이들 몸과 마음이 주님 안에서 건강하게 잘 자라도록", isParticipating: true, order: 15 },
+                                { familyId: "f8", name: "임진주", role: "성도", gender: "F", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 하나님을 알아가는 기쁨을 누릴 수 있도록 기도합니다.", isParticipating: true, order: 16 }
                             ];
                             sampleMembers.forEach(m => {
                                 window.FB_SDK.addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'members'), m);
@@ -1185,7 +1264,7 @@
                         </div>
                     </div>
 
-                    {/* Main Content Area (네이티브 스크롤) */}
+                    {/* Main Content Area */}
                     <div className="main-content flex-1 w-full flex justify-center pb-[100px] bg-[#F3F4F6]">
                         <div className="w-full max-w-6xl p-4 md:p-6">
                             {view === 'prayer' && <PrayerListView members={members} onUpdate={handleUpdatePrayer} />}
