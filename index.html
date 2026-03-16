@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- PWA 및 스마트폰 홈 화면 추가 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="다윗5순">
@@ -13,7 +12,6 @@
     <meta name="theme-color" content="#802B22">
     <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon.png">
     
-    <!-- 카카오톡 공유용 오픈그래프(OG) 태그 -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="온유공동체 다윗 5순 매니져">
     <meta property="og:description" content="인천온누리교회 온유공동체 다윗5순의 순기도제목, 순예배 관리 시스템입니다.">
@@ -23,7 +21,6 @@
     
     <title>온유공동체 다윗 5순 매니져</title>
     
-    <!-- Scripts -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -62,10 +59,10 @@
         .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
 
         /* 세련된 커스텀 스크롤바 */
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
         @media (max-width: 768px) {
             .custom-scrollbar::-webkit-scrollbar { display: none; }
         }
@@ -150,7 +147,6 @@
             });
         };
 
-        // KST 및 로컬 환경 기준 날짜 변환 함수 (날짜 밀림 방지)
         const getLocalYYYYMMDD = (dateObj) => {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -169,6 +165,7 @@
 
             const [editingRecord, setEditingRecord] = useState(null); 
             const [financeEditMode, setFinanceEditMode] = useState(false);
+            const [edits, setEdits] = useState({});
             const [carry, setCarry] = useState(finance.carryOver || 0);
 
             useEffect(() => { setCarry(finance.carryOver || 0); }, [finance.carryOver]);
@@ -209,6 +206,13 @@
                 return { count };
             }, [history, currentYear, currentQuarter]);
 
+            const handleSaveFinance = () => {
+                onUpdateFinanceEdits(carry, edits);
+                setFinanceEditMode(false);
+                setEdits({});
+                alert("재정 설정이 저장되었습니다.");
+            };
+
             return (
                 <div className="space-y-6 animate-slide-up">
                     <header className="flex justify-between items-end px-1">
@@ -225,13 +229,11 @@
                                 </div>
                                 <div className="space-y-6 md:space-y-8">
                                     
-                                    {/* 총 누적합산 금액 표시 영역 */}
                                     <div className="bg-red-50 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center sm:items-end gap-2 border border-red-100">
                                         <span className="font-black text-[#802B22] text-sm md:text-base">총 누적합산 금액</span>
                                         <span className="font-black text-3xl md:text-4xl text-gray-800">₩ {cumulativeTotal.toLocaleString()}</span>
                                     </div>
 
-                                    {/* 이월금 수정 (단독 저장 기능) */}
                                     <div className="w-full">
                                         <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-2 md:mb-3">전학기 이월금</label>
                                         <div className="flex items-center gap-2 w-full">
@@ -243,7 +245,6 @@
                                         </div>
                                     </div>
 
-                                    {/* 단순 내역 표시로 변경된 과거 내역 */}
                                     <div className="border-t-2 border-gray-50 pt-4 md:pt-6 w-full">
                                         <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-3 md:mb-4">순예배 헌금 내역</label>
                                         <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1 md:pr-2 custom-scrollbar w-full">
@@ -280,13 +281,12 @@
                                             <span className="font-black text-gray-800 text-xl md:text-2xl">{quarterStats.count}회</span>
                                         </div>
                                         <div className="flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-gray-100 bg-gray-50/50 rounded-xl py-3 mx-1" onClick={() => setFinanceEditMode(true)}>
-                                            <span className="text-xs font-bold text-[#802B22] uppercase mb-1.5 flex items-center gap-1"><Icon name="coins" className="w-3.5 h-3.5"/> 순헌금</span>
+                                            <span className="text-xs font-bold text-[#802B22] uppercase mb-1.5 flex items-center gap-1"><Icon name="coins" className="w-3.5 h-3.5"/> 순헌금(40%)</span>
                                             <span className="font-black text-gray-800 text-xl md:text-2xl">₩{cumulativeTotal.toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Calendar (Mobile 사이즈 축소 적용) */}
                                 <Card className="p-4 md:p-6">
                                     <div className="flex justify-between items-center mb-3 md:mb-5">
                                         <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="text-gray-500 w-5 h-5 md:w-6 md:h-6" /></button>
@@ -345,8 +345,8 @@
                                                 </div>
                                                 <div className="text-right flex flex-col items-end gap-1.5">
                                                     <button onClick={() => setEditingRecord(h)} className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg mb-1 active:scale-95 transition-transform flex items-center gap-1 hover:bg-blue-100"><Icon name="edit-3" className="w-3.5 h-3.5"/> 수정</button>
-                                                    <div className="text-[11px] font-black text-gray-400 uppercase mb-0.5">순헌금 (40%)</div>
-                                                    <div className="font-black text-gray-800 text-xl">₩{Math.floor((Number(h.offering)||0)*0.4).toLocaleString()}</div>
+                                                    <div className="text-[11px] font-black text-gray-400 uppercase mb-0.5">순헌금</div>
+                                                    <div className="font-black text-gray-800 text-xl">₩{(Number(h.offering)||0).toLocaleString()}</div>
                                                 </div>
                                             </div>
                                             
@@ -375,7 +375,7 @@
 
                     {/* 새 예배 기록 작성 모달 */}
                     {showAdd && !financeEditMode && (
-                        <div className="fixed inset-0 z-[200] bg-black/60 flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
+                        <div className="fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full" onClick={e=>e.stopPropagation()}>
                                 <Card className="border-t-8 border-[#802B22] fade-in p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
                                     <div className="flex justify-between items-center mb-6 shrink-0">
@@ -393,7 +393,6 @@
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
-                                        {/* 만원 단위 스텝 적용 */}
                                         <input type="number" step="10000" placeholder="당일 총 헌금액 (목록엔 40% 자동계산됨)" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
                                         <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={newRecord.location || ""} onChange={e => setNewRecord({...newRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
@@ -433,7 +432,6 @@
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
-                                        {/* 만원 단위 스텝 적용 */}
                                         <input type="number" step="10000" placeholder="당일 총 헌금액" value={editingRecord.offering} onChange={e => setEditingRecord({...editingRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
                                         <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={editingRecord.location || ""} onChange={e => setEditingRecord({...editingRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
