@@ -52,8 +52,10 @@
         .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
         
         /* Calendar Styles */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border-radius: 12px; transition: all 0.2s; position: relative; gap: 2px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        @media (min-width: 768px) { .calendar-grid { gap: 4px; } }
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.2s; position: relative; gap: 2px; }
+        @media (min-width: 768px) { .calendar-day { border-radius: 12px; } }
         .has-record::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -102,6 +104,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
+        // 데이터 유지
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v28';
 
         window.FB_SDK = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, appId };
@@ -265,7 +268,7 @@
                                     </div>
                                     <div className="grid grid-cols-3 divide-x divide-gray-100">
                                         <div className="flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-blue-50 bg-blue-50/50 rounded-xl py-3 mx-1" onClick={onOpenDirectory}>
-                                            <span className="text-xs font-bold text-blue-500 uppercase mb-1.5 flex items-center gap-1"><Icon name="users" className="w-3.5 h-3.5"/> 순원정보</span>
+                                            <span className="text-xs font-bold text-blue-500 uppercase mb-1.5 flex items-center gap-1"><Icon name="users" className="w-3.5 h-3.5"/> 참석순원</span>
                                             <span className="font-black text-gray-800 text-xl md:text-2xl">{activeMembers.length}명</span>
                                         </div>
                                         <div className="flex flex-col items-center justify-center mx-1">
@@ -279,23 +282,24 @@
                                     </div>
                                 </div>
 
-                                <Card className="p-6">
-                                    <div className="flex justify-between items-center mb-5">
-                                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="text-gray-500 w-6 h-6" /></button>
-                                        <h3 className="font-black text-lg md:text-xl">{currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월</h3>
-                                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-right" className="text-gray-500 w-6 h-6" /></button>
+                                {/* Calendar (Mobile 사이즈 축소 적용) */}
+                                <Card className="p-4 md:p-6">
+                                    <div className="flex justify-between items-center mb-3 md:mb-5">
+                                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="text-gray-500 w-5 h-5 md:w-6 md:h-6" /></button>
+                                        <h3 className="font-black text-base md:text-xl">{currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월</h3>
+                                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-right" className="text-gray-500 w-5 h-5 md:w-6 md:h-6" /></button>
                                     </div>
-                                    <div className="calendar-grid mb-3">{['일','월','화','수','목','금','토'].map(d => <div key={d} className="text-center text-xs font-black text-gray-400 uppercase">{d}</div>)}</div>
+                                    <div className="calendar-grid mb-2 md:mb-3">{['일','월','화','수','목','금','토'].map(d => <div key={d} className="text-center text-[10px] md:text-xs font-black text-gray-400 uppercase">{d}</div>)}</div>
                                     <div className="calendar-grid">
                                         {daysInMonth.map((day, i) => {
                                             if (!day) return <div key={`empty-${i}`} />;
                                             const dStr = day.toISOString().split('T')[0];
                                             const record = recordDates.get(dStr);
                                             return (
-                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : 'text-gray-400'}`}>
-                                                    <span className="text-base md:text-lg">{day.getDate()}</span>
+                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : 'text-gray-400'}`}>
+                                                    <span className="text-sm md:text-lg">{day.getDate()}</span>
                                                     {record && (
-                                                        <span className={`text-[9px] md:text-[10px] font-black px-1.5 py-0.5 rounded-sm leading-tight mt-1 ${
+                                                        <span className={`text-[8px] md:text-[10px] font-black px-1 md:px-1.5 py-0.5 rounded-sm leading-tight mt-0.5 md:mt-1 ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
                                                             record.type === '연합야유회' ? 'bg-green-100 text-green-600' :
@@ -771,11 +775,11 @@
 
                     <div className="flex justify-between items-center px-1">
                         <span className="text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
-                            참여 {activeMembers.length}명 중 {activeMembers.filter(m => m.prayer).length}명 나눔
+                            총 참석순원 {activeMembers.length}명 중 {activeMembers.filter(m => m.prayer).length}명 나눔
                         </span>
                         <button onClick={() => setIsAllExpanded(!isAllExpanded)} className="text-sm font-black text-[#802B22] flex items-center gap-1.5 bg-red-50 px-4 py-2 rounded-xl active:scale-95 transition-transform shadow-sm hover:bg-red-100 border border-red-100">
                             <Icon name={isAllExpanded ? "chevrons-up" : "chevrons-down"} className="w-4 h-4" />
-                            {isAllExpanded ? "모두 접기" : "모두 펼치기"}
+                            {isAllExpanded ? "순기도제목 모두 접기" : "순기도제목 모두 펼치기"}
                         </button>
                     </div>
 
@@ -1063,7 +1067,7 @@
                         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
                             <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-black mb-6">관리자 비밀번호</h3>
-                                <input type="password" value={authInput} onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} className={`w-full p-4 bg-gray-50 border ${authError?'border-red-400':'border-gray-200'} rounded-xl font-bold text-lg mb-2 outline-none focus:border-[#802B22] transition-colors`} placeholder="초기 비밀번호: 00" autoFocus/>
+                                <input type="password" value={authInput} onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} className={`w-full p-4 bg-gray-50 border ${authError?'border-red-400':'border-gray-200'} rounded-xl font-bold text-lg mb-2 outline-none focus:border-[#802B22] transition-colors`} placeholder="비밀번호 입력" autoFocus/>
                                 {authError && <p className="text-red-500 text-sm font-bold mb-4">{authError}</p>}
                                 <button onClick={handleLogin} className="w-full py-4 mt-2 bg-[#802B22] text-white text-lg font-black rounded-xl active:scale-95 hover:bg-[#6c231c]">확인</button>
                             </div>
@@ -1131,7 +1135,7 @@
                                 { familyId: "f7", name: "김재학", role: "집사", gender: "M", children: "하은('16)", vehicle: "", prayer: "1. 영육간의 강건함을 주시기를\n2. 직장에서의 관계와 업무가 순탄하게 진행되기를 기도합니다.", isParticipating: true, order: 13 },
                                 { familyId: "f7", name: "안나경", role: "집사", gender: "F", children: "하은('16)", vehicle: "", prayer: "1. 하은이가 하나님을 깊이 만나고 믿음으로 자라길 기도합니다.", isParticipating: true, order: 14 },
                                 { familyId: "f8", name: "김유환", role: "성도", gender: "M", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 아내 임진주성도 주님께 마음이 열리고 예배자리로 나올수 있도록\n2. 아이들 몸과 마음이 주님 안에서 건강하게 잘 자라도록", isParticipating: true, order: 15 },
-                                { familyId: "f8", name: "임진주", role: "성도", gender: "F", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 하나님을 알아가는 기쁨을 누릴 수 있도록 기도합니다.", isParticipating: true, order: 16 }
+                                { familyId: "f8", name: "임진주", role: "성도", gender: "F", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 하나님을 알아가는 기쁨을 누릴 수 있도록 기도합니다.", isParticipating: false, order: 16 }
                             ];
                             sampleMembers.forEach(m => {
                                 window.FB_SDK.addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'members'), m);
