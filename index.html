@@ -142,6 +142,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
+        // 데이터 유지
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v28';
 
         window.FB_SDK = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, appId };
@@ -434,7 +435,7 @@
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
-                                        <input type="number" step="10000" placeholder="당일 총 헌금액 (목록엔 40% 자동계산됨)" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
+                                        <input type="number" step="10000" placeholder="당일 총 헌금액" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
                                         <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={newRecord.location || ""} onChange={e => setNewRecord({...newRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={newRecord.notes || ""} onChange={e => setNewRecord({...newRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
@@ -721,12 +722,11 @@
 
             return (
                 <Card className="p-0 transition-all overflow-hidden border border-gray-100 shadow-sm hover:shadow-md">
-                    <div className="p-6 flex justify-between items-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors relative" onClick={() => !isEditing && setIsExpanded(!isExpanded)}>
-                        <div className="flex items-center gap-4 pr-12">
-                            <div className="w-14 h-14 rounded-full flex items-center justify-center font-black text-xl shrink-0 bg-red-50 text-[#802B22]">{m.name[0]}</div>
+                    <div className="p-4 md:p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors relative" onClick={() => !isEditing && setIsExpanded(!isExpanded)}>
+                        <div className="flex items-center">
                             <div>
                                 <div className="flex items-baseline gap-2 mb-1.5">
-                                    <span className="text-2xl font-black text-gray-800">{m.name}</span>
+                                    <span className="text-xl md:text-2xl font-black text-gray-800">{m.name}</span>
                                     {m.role && <span className="text-sm font-bold text-gray-400">{m.role}</span>}
                                 </div>
                                 {tags.length > 0 && !isEditing && (
@@ -736,7 +736,7 @@
                                 )}
                             </div>
                         </div>
-                        <div className="flex flex-col items-center gap-2 absolute top-6 right-6">
+                        <div className="flex flex-col items-center gap-2 mt-1">
                             {!isExpanded && <Icon name="chevron-down" className="text-gray-300 w-6 h-6 shrink-0" />}
                             {isExpanded && !isEditing && <Icon name="chevron-up" className="text-[#802B22] w-6 h-6 shrink-0" />}
                             {isExpanded && !isEditing && (
@@ -748,14 +748,14 @@
                     </div>
 
                     {isExpanded && (
-                        <div className="px-6 pb-6 border-t border-gray-50 pt-5 bg-gray-50/30">
+                        <div className="px-3.5 pb-5 pt-4 md:px-5 border-t border-gray-50 bg-gray-50/30">
                             {isEditing ? (
                                 <div className="space-y-4 fade-in">
                                     <textarea
                                         value={draft}
                                         onChange={e => setDraft(e.target.value)}
                                         placeholder="순기도제목을 상세히 입력하세요..."
-                                        className="w-full bg-white p-5 rounded-2xl border border-gray-200 text-lg font-bold outline-none focus:border-[#802B22] min-h-[160px] resize-none text-gray-800 shadow-inner custom-scrollbar leading-relaxed"
+                                        className="w-full bg-white p-4 rounded-2xl border border-gray-200 text-[15px] md:text-base font-bold outline-none focus:border-[#802B22] min-h-[160px] resize-none text-gray-800 shadow-inner custom-scrollbar leading-relaxed"
                                         autoFocus
                                     />
                                     <div className="flex justify-end gap-3">
@@ -766,13 +766,13 @@
                             ) : (
                                 <div className="relative fade-in">
                                     {m.prayer ? (
-                                        <div className="text-lg md:text-xl font-bold flex flex-col gap-3.5">
+                                        <div className="text-[15px] md:text-base font-bold flex flex-col gap-3">
                                             {m.prayer.split('\n').map((line, idx) => {
                                                 if (!line.trim()) return <div key={idx} className="h-1"></div>;
                                                 const match = line.trim().match(/^(\d+[\.\)])\s*(.*)/);
                                                 if (match) {
                                                     return (
-                                                        <div key={idx} className="flex gap-2.5 items-start">
+                                                        <div key={idx} className="flex gap-2 items-start">
                                                             <span className="text-[#802B22] font-black shrink-0 leading-[1.7]">{match[1]}</span>
                                                             <span className="text-gray-700 leading-[1.7] break-words">{match[2]}</span>
                                                         </div>
@@ -782,7 +782,7 @@
                                             })}
                                         </div>
                                     ) : (
-                                        <p className="text-base text-gray-400 font-bold italic py-4">등록된 순기도제목이 없습니다.</p>
+                                        <p className="text-sm md:text-base text-gray-400 font-bold italic py-2">등록된 순기도제목이 없습니다.</p>
                                     )}
                                 </div>
                             )}
@@ -842,7 +842,7 @@
 
                     <div className="flex justify-between items-center px-1">
                         <span className="text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
-                            총 참석순원 {activeMembers.length}명 중 {activeMembers.filter(m => m.prayer).length}명 나눔
+                            총 {activeMembers.filter(m => m.prayer).length}개
                         </span>
                         <button onClick={() => setIsAllExpanded(!isAllExpanded)} className="text-sm font-black text-[#802B22] flex items-center gap-1.5 bg-red-50 px-4 py-2 rounded-xl active:scale-95 transition-transform shadow-sm hover:bg-red-100 border border-red-100">
                             <Icon name={isAllExpanded ? "chevrons-up" : "chevrons-down"} className="w-4 h-4" />
