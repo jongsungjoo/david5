@@ -7,39 +7,39 @@
     <!-- PWA 및 스마트폰 홈 화면 추가 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="다윗5순">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon.png">
+    <meta name="apple-mobile-web-app-title" content="다윗5순매니져">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#802B22">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     
     <!-- 카카오톡 공유용 오픈그래프(OG) 태그 -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="온유공동체 다윗 5순 매니져">
+    <meta property="og:title" content="다윗5순매니져">
     <meta property="og:description" content="인천온누리교회 온유공동체 다윗5순의 순기도제목, 순예배 관리 시스템입니다.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon.png">
+    <meta property="og:image" content="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="800">
     
-    <title>온유공동체 다윗 5순 매니져</title>
+    <title>다윗5순매니져</title>
 
     <!-- PWA 매니페스트 및 서비스 워커 동적 등록 (앱 설치 팝업 활성화) -->
     <script>
         const manifest = {
-            "name": "온유공동체 다윗 5순 매니져",
-            "short_name": "다윗5순",
+            "name": "다윗5순매니져",
+            "short_name": "다윗5순매니져",
             "start_url": ".",
             "display": "standalone",
             "background_color": "#F3F4F6",
             "theme_color": "#802B22",
             "icons": [
                 {
-                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon.png",
+                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png",
                     "sizes": "192x192",
                     "type": "image/png"
                 },
                 {
-                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon.png",
+                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png",
                     "sizes": "512x512",
                     "type": "image/png"
                 }
@@ -142,8 +142,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // 데이터 유지
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v28';
+        // 데이터 강제 갱신
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v29';
 
         window.FB_SDK = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, appId };
         window.dispatchEvent(new Event('firebase-ready'));
@@ -435,7 +435,7 @@
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
-                                        <input type="number" step="10000" placeholder="당일 총 헌금액" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
+                                        <input type="number" step="10000" placeholder="당일 총 헌금액 (목록엔 40% 자동계산됨)" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
                                         <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={newRecord.location || ""} onChange={e => setNewRecord({...newRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={newRecord.notes || ""} onChange={e => setNewRecord({...newRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
@@ -748,7 +748,7 @@
                     </div>
 
                     {isExpanded && (
-                        <div className="px-3.5 pb-5 pt-4 md:px-5 border-t border-gray-50 bg-gray-50/30">
+                        <div className="px-4 pb-5 pt-4 md:px-5 border-t border-gray-50 bg-gray-50/30 w-full">
                             {isEditing ? (
                                 <div className="space-y-4 fade-in">
                                     <textarea
@@ -766,23 +766,23 @@
                             ) : (
                                 <div className="relative fade-in">
                                     {m.prayer ? (
-                                        <div className="text-[15px] md:text-base font-bold flex flex-col gap-3">
+                                        <div className="text-[15px] md:text-base font-bold flex flex-col gap-3 w-full">
                                             {m.prayer.split('\n').map((line, idx) => {
-                                                if (!line.trim()) return <div key={idx} className="h-1"></div>;
+                                                if (!line.trim()) return <div key={idx} className="h-1 w-full"></div>;
                                                 const match = line.trim().match(/^(\d+[\.\)])\s*(.*)/);
                                                 if (match) {
                                                     return (
-                                                        <div key={idx} className="flex gap-2 items-start">
+                                                        <div key={idx} className="flex gap-2 items-start w-full">
                                                             <span className="text-[#802B22] font-black shrink-0 leading-[1.7]">{match[1]}</span>
-                                                            <span className="text-gray-700 leading-[1.7] break-words">{match[2]}</span>
+                                                            <span className="text-gray-700 leading-[1.7] flex-1 break-words text-justify" style={{ wordBreak: 'break-all' }}>{match[2]}</span>
                                                         </div>
                                                     );
                                                 }
-                                                return <div key={idx} className="text-gray-700 leading-[1.7] break-words">{line}</div>;
+                                                return <div key={idx} className="text-gray-700 leading-[1.7] w-full break-words text-justify" style={{ wordBreak: 'break-all' }}>{line}</div>;
                                             })}
                                         </div>
                                     ) : (
-                                        <p className="text-sm md:text-base text-gray-400 font-bold italic py-2">등록된 순기도제목이 없습니다.</p>
+                                        <p className="text-sm md:text-base text-gray-400 font-bold italic py-2 w-full">등록된 순기도제목이 없습니다.</p>
                                     )}
                                 </div>
                             )}
@@ -1170,7 +1170,6 @@
             );
         };
 
-        // --- Main App ---
         const App = () => {
             const [ready, setReady] = useState(false);
             const [view, setView] = useState('prayer');
@@ -1345,8 +1344,8 @@
                     {/* Header (상단 고정) */}
                     <div className="bg-white border-b border-gray-100 shadow-sm z-40 flex justify-center w-full sticky top-0">
                         <div className="w-full max-w-6xl flex items-center gap-3 p-4 md:p-5">
-                            <img src="https://raw.githubusercontent.com/jongsungjoo/grace/refs/heads/main/logo.png" className="w-9 h-9 object-contain rounded-xl" alt="logo" />
-                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800">온유공동체 다윗 5순 매니져</h2>
+                            <img src="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png" className="w-9 h-9 object-contain rounded-xl" alt="logo" />
+                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800">다윗5순매니져</h2>
                         </div>
                     </div>
 
