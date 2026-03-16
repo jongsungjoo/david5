@@ -62,10 +62,10 @@
         .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
 
         /* 세련된 커스텀 스크롤바 */
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
         @media (max-width: 768px) {
             .custom-scrollbar::-webkit-scrollbar { display: none; }
         }
@@ -104,7 +104,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // 데이터 유지
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v28';
 
         window.FB_SDK = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, appId };
@@ -151,18 +150,25 @@
             });
         };
 
+        // KST 및 로컬 환경 기준 날짜 변환 함수 (날짜 밀림 방지)
+        const getLocalYYYYMMDD = (dateObj) => {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
         // --- View 1: 순예배기록 ---
         const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const scrollRefs = useRef({});
             const [showAdd, setShowAdd] = useState(false);
-            const [newRecord, setNewRecord] = useState({ date: new Date().toISOString().split('T')[0], type: "순예배", members: [], offering: "", location: "", notes: "" });
+            const [newRecord, setNewRecord] = useState({ date: getLocalYYYYMMDD(new Date()), type: "순예배", members: [], offering: "", location: "", notes: "" });
             
             const activeMembers = useMemo(() => members.filter(m => m.isParticipating && m.name.trim() !== ''), [members]);
 
             const [editingRecord, setEditingRecord] = useState(null); 
             const [financeEditMode, setFinanceEditMode] = useState(false);
-            const [edits, setEdits] = useState({});
             const [carry, setCarry] = useState(finance.carryOver || 0);
 
             useEffect(() => { setCarry(finance.carryOver || 0); }, [finance.carryOver]);
@@ -203,13 +209,6 @@
                 return { count };
             }, [history, currentYear, currentQuarter]);
 
-            const handleSaveFinance = () => {
-                onUpdateFinanceEdits(carry, edits);
-                setFinanceEditMode(false);
-                setEdits({});
-                alert("재정 설정이 저장되었습니다.");
-            };
-
             return (
                 <div className="space-y-6 animate-slide-up">
                     <header className="flex justify-between items-end px-1">
@@ -225,35 +224,40 @@
                                     <button onClick={() => setFinanceEditMode(false)} className="p-2 bg-gray-50 rounded-full text-gray-500 active:scale-95"><Icon name="x" className="w-5 h-5 md:w-6 md:h-6" /></button>
                                 </div>
                                 <div className="space-y-6 md:space-y-8">
+                                    
+                                    {/* 총 누적합산 금액 표시 영역 */}
+                                    <div className="bg-red-50 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center sm:items-end gap-2 border border-red-100">
+                                        <span className="font-black text-[#802B22] text-sm md:text-base">총 누적합산 금액</span>
+                                        <span className="font-black text-3xl md:text-4xl text-gray-800">₩ {cumulativeTotal.toLocaleString()}</span>
+                                    </div>
+
+                                    {/* 이월금 수정 (단독 저장 기능) */}
                                     <div className="w-full">
                                         <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-2 md:mb-3">전학기 이월금</label>
-                                        <div className="flex items-center gap-2 bg-gray-50 p-2 md:p-3 rounded-xl w-full">
-                                            <input type="number" value={carry} onChange={e => setCarry(e.target.value)} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-white rounded-xl font-bold text-base md:text-lg outline-none text-right border border-gray-100" placeholder="이월금을 입력하세요" />
-                                            <span className="text-base md:text-lg font-bold text-gray-500 pr-2 shrink-0 whitespace-nowrap">원</span>
+                                        <div className="flex items-center gap-2 w-full">
+                                            <div className="flex items-center gap-2 bg-gray-50 p-2 md:p-3 rounded-xl flex-1">
+                                                <input type="number" value={carry} onChange={e => setCarry(e.target.value)} className="flex-1 min-w-0 w-full p-2 md:p-3 bg-transparent font-bold text-base md:text-lg outline-none text-right" placeholder="이월금" />
+                                                <span className="text-base md:text-lg font-bold text-gray-500 pr-2 shrink-0 whitespace-nowrap">원</span>
+                                            </div>
+                                            <button onClick={() => { onUpdateFinanceEdits(carry, {}); alert("이월금이 저장되었습니다."); }} className="px-5 py-4 md:py-6 bg-gray-800 text-white rounded-xl font-black text-sm md:text-base active:scale-95 transition-transform shrink-0 shadow-sm hover:bg-gray-900">저장</button>
                                         </div>
                                     </div>
+
+                                    {/* 단순 내역 표시로 변경된 과거 내역 */}
                                     <div className="border-t-2 border-gray-50 pt-4 md:pt-6 w-full">
-                                        <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-3 md:mb-4">순헌금 내역 (순헌금의 40%)</label>
-                                        <div className="space-y-3 md:space-y-4 max-h-[40vh] overflow-y-auto pr-1 md:pr-2 custom-scrollbar w-full">
+                                        <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-3 md:mb-4">순예배 헌금 내역</label>
+                                        <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1 md:pr-2 custom-scrollbar w-full">
                                             {history.length === 0 && <div className="text-sm md:text-base text-gray-400 font-bold text-center py-6">기록된 헌금 내역이 없습니다.</div>}
                                             {history.map(h => (
-                                                <div key={h.id} className="flex items-center gap-2 md:gap-4 bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-100 w-full overflow-hidden">
-                                                    <span className="text-sm md:text-base font-black text-[#802B22] w-16 md:w-28 shrink-0 text-center">{h.date.substring(5)}</span>
-                                                    <div className="flex flex-col flex-1 min-w-0">
-                                                        <input
-                                                            type="number"
-                                                            value={edits[h.id] !== undefined ? edits[h.id] : h.offering}
-                                                            onChange={e => setEdits({...edits, [h.id]: e.target.value})}
-                                                            className="p-2.5 md:p-3 bg-white rounded-xl font-bold text-base md:text-lg outline-none text-right border border-gray-200 focus:border-[#802B22] min-w-0 w-full"
-                                                            placeholder="총 헌금액"
-                                                        />
-                                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 text-right mt-1.5 truncate">40%: ₩{Math.floor((edits[h.id] !== undefined ? edits[h.id] : h.offering) * 0.4).toLocaleString()}</span>
-                                                    </div>
+                                                <div key={h.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-100 w-full">
+                                                    <span className="text-sm md:text-base font-black text-[#802B22] shrink-0">{h.date}</span>
+                                                    <span className="text-xs md:text-sm font-bold text-gray-600 sm:text-right">
+                                                        총 헌금 ₩{(Number(h.offering)||0).toLocaleString()} / <span className="text-[#802B22]">₩{Math.floor((Number(h.offering)||0) * 0.4).toLocaleString()}</span> <span className="text-gray-400">(40%반영)</span>
+                                                    </span>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                    <button onClick={handleSaveFinance} className="w-full py-4 md:py-5 bg-[#802B22] text-white rounded-2xl font-black shadow-lg active:scale-95 transition-transform text-lg md:text-xl hover:bg-[#6c231c]">누적합 적용 및 저장</button>
                                 </div>
                             </Card>
                         </div>
@@ -293,21 +297,21 @@
                                     <div className="calendar-grid">
                                         {daysInMonth.map((day, i) => {
                                             if (!day) return <div key={`empty-${i}`} />;
-                                            const dStr = day.toISOString().split('T')[0];
+                                            const dStr = getLocalYYYYMMDD(day);
                                             const record = recordDates.get(dStr);
                                             return (
                                                 <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : 'text-gray-400'}`}>
                                                     <span className="text-sm md:text-lg">{day.getDate()}</span>
                                                     {record && (
-                                                        <span className={`text-[8px] md:text-[10px] font-black px-1 md:px-1.5 py-0.5 rounded-sm leading-tight mt-0.5 md:mt-1 ${
+                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 max-w-[95%] truncate text-center ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
                                                             record.type === '연합야유회' ? 'bg-green-100 text-green-600' :
                                                             record.type === '미실시' ? 'bg-gray-300 text-gray-700' :
                                                             'bg-red-100 text-[#802B22]'
                                                         }`}>
-                                                            {record.type.substring(0, 2)}
-                                                        </span>
+                                                            {record.type || '순예배'}
+                                                        </div>
                                                     )}
                                                 </div>
                                             );
@@ -371,14 +375,14 @@
 
                     {/* 새 예배 기록 작성 모달 */}
                     {showAdd && !financeEditMode && (
-                        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => setShowAdd(false)}>
-                            <div className="w-full max-w-2xl mx-auto" onClick={e=>e.stopPropagation()}>
-                                <Card className="border-t-8 border-[#802B22] fade-in p-6 md:p-8">
-                                    <div className="flex justify-between items-center mb-8">
-                                        <h3 className="font-black text-2xl">새 예배 기록 작성</h3>
+                        <div className="fixed inset-0 z-[200] bg-black/60 flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
+                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full" onClick={e=>e.stopPropagation()}>
+                                <Card className="border-t-8 border-[#802B22] fade-in p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
+                                    <div className="flex justify-between items-center mb-6 shrink-0">
+                                        <h3 className="font-black text-xl md:text-2xl">새 예배 기록 작성</h3>
                                         <button onClick={() => setShowAdd(false)} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
                                     </div>
-                                    <div className="space-y-4 md:space-y-6">
+                                    <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-4">
                                         <div className="flex flex-col sm:flex-row gap-3 w-full">
                                             <input type="date" value={newRecord.date} onChange={e => setNewRecord({...newRecord, date: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                             <select value={newRecord.type || "순예배"} onChange={e => setNewRecord({...newRecord, type: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none text-gray-700 border border-gray-200 focus:border-[#802B22]">
@@ -389,17 +393,20 @@
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
-                                        <input type="number" placeholder="당일 총 헌금액 (목록엔 40% 자동계산됨)" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
+                                        {/* 만원 단위 스텝 적용 */}
+                                        <input type="number" step="10000" placeholder="당일 총 헌금액 (목록엔 40% 자동계산됨)" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
                                         <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={newRecord.location || ""} onChange={e => setNewRecord({...newRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={newRecord.notes || ""} onChange={e => setNewRecord({...newRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
 
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[30vh] overflow-y-auto custom-scrollbar pr-2 pt-2 border-t border-gray-100">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-gray-100 pt-4">
                                             {activeMembers.map(m => (
                                                 <button key={m.id} onClick={() => setNewRecord(prev => ({...prev, members: prev.members.includes(m.name) ? prev.members.filter(n => n !== m.name) : [...prev.members, m.name]}))} className={`py-4 rounded-xl text-sm font-bold transition-all border-2 ${newRecord.members.includes(m.name) ? 'bg-[#802B22] border-[#802B22] text-white shadow-md' : 'bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100'}`}>{m.name}</button>
                                             ))}
                                         </div>
-                                        <button onClick={() => { onAddRecord(newRecord); setShowAdd(false); setNewRecord({ date: new Date().toISOString().split('T')[0], type: "순예배", members: [], offering: "", location: "", notes: "" }); }} className="w-full py-5 mt-4 bg-[#802B22] text-white rounded-2xl font-black shadow-lg active:scale-95 text-xl hover:bg-[#6c231c]">저장하기</button>
+                                    </div>
+                                    <div className="shrink-0 pt-4 mt-2">
+                                        <button onClick={() => { onAddRecord(newRecord); setShowAdd(false); setNewRecord({ date: getLocalYYYYMMDD(new Date()), type: "순예배", members: [], offering: "", location: "", notes: "" }); }} className="w-full py-4 md:py-5 bg-[#802B22] text-white rounded-2xl font-black shadow-lg active:scale-95 text-lg md:text-xl hover:bg-[#6c231c]">저장하기</button>
                                     </div>
                                 </Card>
                             </div>
@@ -408,39 +415,42 @@
 
                     {/* 개별 예배 기록 수정 모달 */}
                     {editingRecord && (
-                        <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
-                            <Card className="w-full max-w-2xl border-t-8 border-[#802B22] relative shadow-2xl p-6 md:p-8" onClick={e=>e.stopPropagation()}>
-                                <div className="flex justify-between items-center mb-8">
-                                    <h3 className="font-black text-2xl">예배 기록 수정</h3>
-                                    <button onClick={() => setEditingRecord(null)} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
-                                </div>
-                                <div className="space-y-4 md:space-y-6">
-                                    <div className="flex flex-col sm:flex-row gap-3 w-full">
-                                        <input type="date" value={editingRecord.date} onChange={e => setEditingRecord({...editingRecord, date: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
-                                        <select value={editingRecord.type || "순예배"} onChange={e => setEditingRecord({...editingRecord, type: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none text-gray-700 border border-gray-200 focus:border-[#802B22]">
-                                            <option value="순예배">순예배</option>
-                                            <option value="휴강">휴강</option>
-                                            <option value="종강예배">종강예배</option>
-                                            <option value="연합야유회">연합야유회</option>
-                                            <option value="미실시">미실시</option>
-                                        </select>
+                        <div className="fixed inset-0 z-[200] bg-black/60 flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
+                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full" onClick={e=>e.stopPropagation()}>
+                                <Card className="border-t-8 border-[#802B22] relative shadow-2xl p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
+                                    <div className="flex justify-between items-center mb-6 shrink-0">
+                                        <h3 className="font-black text-xl md:text-2xl">예배 기록 수정</h3>
+                                        <button onClick={() => setEditingRecord(null)} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
                                     </div>
-                                    <input type="number" placeholder="당일 총 헌금액" value={editingRecord.offering} onChange={e => setEditingRecord({...editingRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
-                                    
-                                    <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={editingRecord.location || ""} onChange={e => setEditingRecord({...editingRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
-                                    <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={editingRecord.notes || ""} onChange={e => setEditingRecord({...editingRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
+                                    <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-4">
+                                        <div className="flex flex-col sm:flex-row gap-3 w-full">
+                                            <input type="date" value={editingRecord.date} onChange={e => setEditingRecord({...editingRecord, date: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
+                                            <select value={editingRecord.type || "순예배"} onChange={e => setEditingRecord({...editingRecord, type: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none text-gray-700 border border-gray-200 focus:border-[#802B22]">
+                                                <option value="순예배">순예배</option>
+                                                <option value="휴강">휴강</option>
+                                                <option value="종강예배">종강예배</option>
+                                                <option value="연합야유회">연합야유회</option>
+                                                <option value="미실시">미실시</option>
+                                            </select>
+                                        </div>
+                                        {/* 만원 단위 스텝 적용 */}
+                                        <input type="number" step="10000" placeholder="당일 총 헌금액" value={editingRecord.offering} onChange={e => setEditingRecord({...editingRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
+                                        
+                                        <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={editingRecord.location || ""} onChange={e => setEditingRecord({...editingRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
+                                        <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={editingRecord.notes || ""} onChange={e => setEditingRecord({...editingRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
 
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[25vh] overflow-y-auto custom-scrollbar pr-2 pt-2 border-t border-gray-100">
-                                        {activeMembers.map(m => (
-                                            <button key={m.id} onClick={() => setEditingRecord(prev => ({...prev, members: prev.members.includes(m.name) ? prev.members.filter(n => n !== m.name) : [...prev.members, m.name]}))} className={`py-4 rounded-xl text-sm font-bold transition-all border-2 ${editingRecord.members.includes(m.name) ? 'bg-[#802B22] border-[#802B22] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'}`}>{m.name}</button>
-                                        ))}
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-gray-100 pt-4">
+                                            {activeMembers.map(m => (
+                                                <button key={m.id} onClick={() => setEditingRecord(prev => ({...prev, members: prev.members.includes(m.name) ? prev.members.filter(n => n !== m.name) : [...prev.members, m.name]}))} className={`py-4 rounded-xl text-sm font-bold transition-all border-2 ${editingRecord.members.includes(m.name) ? 'bg-[#802B22] border-[#802B22] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'}`}>{m.name}</button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="flex gap-3 pt-6 border-t border-gray-100 mt-4">
+                                    <div className="flex gap-3 pt-4 border-t border-gray-100 mt-2 shrink-0">
                                         <button onClick={() => { onDeleteRecord(editingRecord.id); setEditingRecord(null); }} className="w-1/3 py-4 md:py-5 bg-red-50 text-red-600 rounded-2xl font-black text-lg active:scale-95 hover:bg-red-100">삭제</button>
                                         <button onClick={() => { onUpdateRecord(editingRecord.id, editingRecord); setEditingRecord(null); }} className="w-2/3 py-4 md:py-5 bg-[#802B22] text-white rounded-2xl font-black text-lg shadow-lg active:scale-95 hover:bg-[#6c231c]">수정 완료</button>
                                     </div>
-                                </div>
-                            </Card>
+                                </Card>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1067,7 +1077,15 @@
                         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
                             <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-black mb-6">관리자 비밀번호</h3>
-                                <input type="password" value={authInput} onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} className={`w-full p-4 bg-gray-50 border ${authError?'border-red-400':'border-gray-200'} rounded-xl font-bold text-lg mb-2 outline-none focus:border-[#802B22] transition-colors`} placeholder="비밀번호 입력" autoFocus/>
+                                <input 
+                                    type="password" 
+                                    value={authInput} 
+                                    onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+                                    className={`w-full p-4 bg-gray-50 border ${authError?'border-red-400':'border-gray-200'} rounded-xl font-bold text-lg mb-2 outline-none focus:border-[#802B22] transition-colors`} 
+                                    placeholder="비밀번호 입력" 
+                                    autoFocus
+                                />
                                 {authError && <p className="text-red-500 text-sm font-bold mb-4">{authError}</p>}
                                 <button onClick={handleLogin} className="w-full py-4 mt-2 bg-[#802B22] text-white text-lg font-black rounded-xl active:scale-95 hover:bg-[#6c231c]">확인</button>
                             </div>
@@ -1079,7 +1097,14 @@
                         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
                             <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-black mb-6">새 비밀번호 설정</h3>
-                                <input type="text" value={newPwd} onChange={e=>setNewPwd(e.target.value)} className="w-full p-4 bg-gray-50 border rounded-xl font-bold text-lg mb-6 outline-none focus:border-[#802B22] transition-colors" placeholder="새로운 비밀번호 입력"/>
+                                <input 
+                                    type="text" 
+                                    value={newPwd} 
+                                    onChange={e=>setNewPwd(e.target.value)} 
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleChangePwd(); }}
+                                    className="w-full p-4 bg-gray-50 border rounded-xl font-bold text-lg mb-6 outline-none focus:border-[#802B22] transition-colors" 
+                                    placeholder="새로운 비밀번호 입력"
+                                />
                                 <button onClick={handleChangePwd} className="w-full py-4 bg-[#802B22] text-white text-lg font-black rounded-xl active:scale-95 hover:bg-[#6c231c]">변경 완료</button>
                             </div>
                         </div>
