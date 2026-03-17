@@ -194,7 +194,7 @@
         };
 
         // --- View 1: 순예배기록 ---
-        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory }) => {
+        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory, adminPass }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const scrollRefs = useRef({});
             const [showAdd, setShowAdd] = useState(false);
@@ -206,6 +206,11 @@
             const [financeEditMode, setFinanceEditMode] = useState(false);
             const [edits, setEdits] = useState({});
             const [carry, setCarry] = useState(finance.carryOver || 0);
+
+            const [showAuth, setShowAuth] = useState(false);
+            const [authInput, setAuthInput] = useState('');
+            const [authError, setAuthError] = useState('');
+            const [pendingAction, setPendingAction] = useState(null);
 
             useEffect(() => { setCarry(finance.carryOver || 0); }, [finance.carryOver]);
 
@@ -250,6 +255,25 @@
                 setFinanceEditMode(false);
                 setEdits({});
                 alert("재정 설정이 저장되었습니다.");
+            };
+
+            const executeWithAuth = (action) => {
+                setPendingAction(() => action);
+                setShowAuth(true);
+            };
+
+            const handleAuthConfirm = () => {
+                if (authInput === adminPass) {
+                    setShowAuth(false);
+                    setAuthInput('');
+                    setAuthError('');
+                    if (pendingAction) {
+                        pendingAction();
+                        setPendingAction(null);
+                    }
+                } else {
+                    setAuthError('비밀번호가 일치하지 않습니다.');
+                }
             };
 
             return (
@@ -342,7 +366,7 @@
                                                 <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : 'text-gray-400'}`}>
                                                     <span className="text-sm md:text-lg">{day.getDate()}</span>
                                                     {record && (
-                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 w-[90%] mx-auto truncate text-center block ${
+                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
                                                             record.type === '연합야유회' ? 'bg-green-100 text-green-600' :
@@ -389,13 +413,22 @@
                                                 </div>
                                             </div>
                                             
-                                            {(h.location || h.notes) && (
-                                                <div className="pt-2 border-t border-gray-50 flex flex-col gap-2">
+                                            {/* 변경된 카드 내용 레이아웃: 장소 -> 참석인원 -> 메모 */}
+                                            {(h.location || h.notes || (h.members && h.members.length > 0)) && (
+                                                <div className="pt-3 border-t border-gray-50 flex flex-col gap-3">
                                                     {h.location && (
                                                         <div className="text-sm font-bold text-gray-600 flex items-center gap-1.5">
                                                             <Icon name="map-pin" className="w-4 h-4 text-[#802B22]" /> {h.location}
                                                         </div>
                                                     )}
+                                                    
+                                                    {h.members && h.members.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {h.members.map(name => <span key={name} className="bg-gray-50 text-gray-600 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-100">{name}</span>)}
+                                                            <span className="bg-red-50 text-[#802B22] text-xs font-black px-2.5 py-1.5 rounded-lg ml-auto">{h.members.length}명 참석</span>
+                                                        </div>
+                                                    )}
+
                                                     {h.notes && (
                                                         <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl whitespace-pre-wrap leading-relaxed">
                                                             {h.notes}
@@ -403,8 +436,6 @@
                                                     )}
                                                 </div>
                                             )}
-
-                                            <div className="flex flex-wrap gap-2 mt-auto pt-2">{h.members.map(name => <span key={name} className="bg-gray-50 text-gray-600 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-100">{name}</span>)}<span className="bg-red-50 text-[#802B22] text-xs font-black px-2.5 py-1.5 rounded-lg ml-auto">{h.members.length}명 참석</span></div>
                                         </Card>
                                     ))}
                                 </div>
@@ -423,7 +454,13 @@
                                             <button onClick={() => setShowAdd(false)} className="p-1 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="w-6 h-6"/></button>
                                             <h3 className="font-black text-lg md:text-xl text-gray-800">새 예배 기록</h3>
                                         </div>
-                                        <button onClick={() => { onAddRecord(newRecord); setShowAdd(false); setNewRecord({ date: getLocalYYYYMMDD(new Date()), type: "순예배", members: [], offering: "", location: "", notes: "" }); }} className="px-5 py-1.5 bg-[#802B22] text-white rounded-lg font-black text-xs shadow-md active:scale-95 hover:bg-[#6c231c]">저장</button>
+                                        <button onClick={() => { 
+                                            executeWithAuth(() => {
+                                                onAddRecord(newRecord); 
+                                                setShowAdd(false); 
+                                                setNewRecord({ date: getLocalYYYYMMDD(new Date()), type: "순예배", members: [], offering: "", location: "", notes: "" }); 
+                                            });
+                                        }} className="px-5 py-1.5 bg-[#802B22] text-white rounded-lg font-black text-xs shadow-md active:scale-95 hover:bg-[#6c231c]">저장</button>
                                     </div>
 
                                     <div className="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-2">
@@ -472,8 +509,16 @@
                                             <h3 className="font-black text-lg md:text-xl text-gray-800">예배 기록 수정</h3>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => { onDeleteRecord(editingRecord.id); setEditingRecord(null); }} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-xs active:scale-95 hover:bg-red-100">삭제</button>
-                                            <button onClick={() => { onUpdateRecord(editingRecord.id, editingRecord); setEditingRecord(null); }} className="px-4 py-1.5 bg-[#802B22] text-white rounded-lg font-black text-xs shadow-md active:scale-95 hover:bg-[#6c231c]">수정</button>
+                                            <button onClick={() => { 
+                                                executeWithAuth(() => {
+                                                    onDeleteRecord(editingRecord.id); setEditingRecord(null); 
+                                                });
+                                            }} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-xs active:scale-95 hover:bg-red-100">삭제</button>
+                                            <button onClick={() => { 
+                                                executeWithAuth(() => {
+                                                    onUpdateRecord(editingRecord.id, editingRecord); setEditingRecord(null); 
+                                                });
+                                            }} className="px-4 py-1.5 bg-[#802B22] text-white rounded-lg font-black text-xs shadow-md active:scale-95 hover:bg-[#6c231c]">수정</button>
                                         </div>
                                     </div>
 
@@ -506,6 +551,31 @@
                                         </div>
                                     </div>
                                 </Card>
+                            </div>
+                        </div>,
+                        document.body
+                    )}
+
+                    {/* 비밀번호 입력 모달 (예배기록 저장/수정/삭제용) */}
+                    {showAuth && ReactDOM.createPortal(
+                        <div className="fixed inset-0 z-[999999] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
+                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
+                                <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
+                                <input 
+                                    type="password" 
+                                    value={authInput} 
+                                    onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAuthConfirm(); }}
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#2C3552] transition-colors`} 
+                                    placeholder="••••••••" 
+                                    autoFocus
+                                />
+                                {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
+                                <div className="flex gap-3 mt-6">
+                                    <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
+                                    <button onClick={handleAuthConfirm} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">확인</button>
+                                </div>
                             </div>
                         </div>,
                         document.body
@@ -930,7 +1000,7 @@
                                     <div className="flex justify-between items-center mb-6 shrink-0">
                                         <div>
                                             <span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase block mb-1">PRAYER EDIT</span>
-                                            <h3 className="font-black text-xl md:text-2xl">{editingMember.name} 기도제목 수정</h3>
+                                            <h3 className="font-black text-xl md:text-2xl">{editingMember.name} {editingMember.role} 기도제목 수정</h3>
                                         </div>
                                         <button onClick={closeEdit} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
                                     </div>
@@ -1220,41 +1290,51 @@
                         </div>
                     </div>
 
-                    {/* 흰색 반투명 모달 백그라운드 일괄 적용 (여기도 포털 안쪽이므로 정상 작동) */}
-                    {showAuth && (
-                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
-                            <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-gray-100" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-black mb-6">관리자 비밀번호</h3>
+                    {/* 관리자 비밀번호 모달 (일괄 적용) */}
+                    {showAuth && ReactDOM.createPortal(
+                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
+                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
+                                <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
                                 <input 
                                     type="password" 
                                     value={authInput} 
                                     onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
-                                    className={`w-full p-4 bg-gray-50 border ${authError?'border-red-400':'border-gray-200'} rounded-xl font-bold text-lg mb-2 outline-none focus:border-[#802B22] transition-colors`} 
-                                    placeholder="비밀번호 입력" 
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#2C3552] transition-colors`} 
+                                    placeholder="••••••••" 
                                     autoFocus
                                 />
-                                {authError && <p className="text-red-500 text-sm font-bold mb-4">{authError}</p>}
-                                <button onClick={handleLogin} className="w-full py-4 mt-2 bg-[#802B22] text-white text-lg font-black rounded-xl active:scale-95 hover:bg-[#6c231c]">확인</button>
+                                {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
+                                <div className="flex gap-3 mt-6">
+                                    <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
+                                    <button onClick={handleLogin} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">확인</button>
+                                </div>
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                     
-                    {showChangePwd && (
+                    {/* 비밀번호 변경 모달 */}
+                    {showChangePwd && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
-                            <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-gray-100" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-xl font-black mb-6">새 비밀번호 설정</h3>
+                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-2xl font-black text-gray-800 mb-6">새 비밀번호 설정</h3>
                                 <input 
                                     type="text" 
                                     value={newPwd} 
                                     onChange={e=>setNewPwd(e.target.value)} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleChangePwd(); }}
-                                    className="w-full p-4 bg-gray-50 border rounded-xl font-bold text-lg mb-6 outline-none focus:border-[#802B22] transition-colors" 
+                                    className="w-full p-4 bg-[#F3F4F6] border border-transparent rounded-2xl font-black text-center text-lg mb-6 outline-none focus:border-[#2C3552] transition-colors" 
                                     placeholder="새로운 비밀번호 입력"
                                 />
-                                <button onClick={handleChangePwd} className="w-full py-4 bg-[#802B22] text-white text-lg font-black rounded-xl active:scale-95 hover:bg-[#6c231c]">변경 완료</button>
+                                <div className="flex gap-3 mt-2">
+                                    <button onClick={() => setShowChangePwd(false)} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
+                                    <button onClick={handleChangePwd} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">변경 완료</button>
+                                </div>
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>,
                 document.body
@@ -1442,7 +1522,7 @@
                         <div className="w-full max-w-6xl p-4 md:p-6">
                             {view === 'prayer' && <PrayerListView members={members} onUpdate={handleUpdatePrayer} />}
                             {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} />}
-                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
+                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} adminPass={adminPass} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
                         </div>
                     </div>
 
