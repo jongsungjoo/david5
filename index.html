@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- PWA 및 스마트폰 홈 화면 추가 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="다윗5순">
@@ -13,7 +12,6 @@
     <meta name="theme-color" content="#802B22">
     <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     
-    <!-- 카카오톡 공유용 오픈그래프(OG) 태그 -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="온유공동체 다윗 5순 매니져">
     <meta property="og:description" content="인천온누리교회 온유공동체 다윗5순의 순기도제목, 순예배 관리 시스템입니다.">
@@ -23,7 +21,6 @@
     
     <title>온유공동체 다윗 5순 매니져</title>
 
-    <!-- PWA 매니페스트 및 서비스 워커 동적 등록 (앱 설치 팝업 활성화) -->
     <script>
         const manifest = {
             "name": "다윗5순매니져",
@@ -63,7 +60,6 @@
         }
     </script>
     
-    <!-- Scripts -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -94,7 +90,8 @@
         /* Calendar Styles */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
         @media (min-width: 768px) { .calendar-grid { gap: 4px; } }
-        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.2s; position: relative; gap: 2px; }
+        /* 수정됨: min-width: 0; overflow: hidden; 추가로 텍스트 말림(오버플로우) 방지 */
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.2s; position: relative; gap: 2px; min-width: 0; overflow: hidden; }
         @media (min-width: 768px) { .calendar-day { border-radius: 12px; } }
         .has-record::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
         
@@ -347,7 +344,8 @@
                                                 <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : 'text-gray-400'}`}>
                                                     <span className="text-sm md:text-lg">{day.getDate()}</span>
                                                     {record && (
-                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 max-w-[95%] truncate text-center ${
+                                                        /* 수정됨: w-[90%] mx-auto block 속성 추가하여 PC 해상도 오버플로우 방지 */
+                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 w-[90%] mx-auto truncate text-center block ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
                                                             record.type === '연합야유회' ? 'bg-green-100 text-green-600' :
@@ -629,8 +627,9 @@
                                         <input value={form.applicationText !== undefined ? form.applicationText : "실천할 일을 결단하고 나누기"} onChange={e => setForm({...form, applicationText: e.target.value})} placeholder="적용과 나눔 내용 입력" className="w-full bg-white p-3 rounded-xl font-bold text-lg outline-none border border-gray-200 focus:border-[#802B22] transition-colors" />
                                     </div>
                                 ) : (
+                                    /* 수정됨: inline-block w-full 속성을 제거하여 우측 텍스트가 길어져도 왼쪽 제목 레이블이 기준선(baseline)을 유지하게 수정 */
                                     <BulletinRow label="적 용 및 나 눔" align="text-left">
-                                        <span className="text-orange-700 w-full inline-block">{form.applicationText !== undefined ? form.applicationText : "실천할 일을 결단하고 나누기"}</span>
+                                        <span className="text-orange-700">{form.applicationText !== undefined ? form.applicationText : "실천할 일을 결단하고 나누기"}</span>
                                     </BulletinRow>
                                 )}
 
@@ -668,10 +667,10 @@
                         </Card>
                     </div>
 
+                    {/* 수정됨: 여백 제거, X버튼 제거, 이미지를 꽉 채우고(object-contain) 아무 곳이나 누르면 닫히도록 수정 */}
                     {fullScreenImage && (
-                        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 fade-in" onClick={() => setFullScreenImage(null)}>
-                            <button className="absolute top-6 right-6 text-white p-3 bg-white/10 rounded-full hover:bg-white/30 transition-colors"><Icon name="x" className="w-8 h-8" /></button>
-                            <img src={fullScreenImage} className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-xl" />
+                        <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center fade-in cursor-pointer" onClick={() => setFullScreenImage(null)}>
+                            <img src={fullScreenImage} className="w-full h-full object-contain" alt="악보 크게 보기" />
                         </div>
                     )}
 
