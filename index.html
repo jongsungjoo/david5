@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- PWA 및 스마트폰 홈 화면 추가 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="다윗5순">
@@ -12,6 +13,7 @@
     <meta name="theme-color" content="#802B22">
     <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     
+    <!-- 카카오톡 공유용 오픈그래프(OG) 태그 -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="온유공동체 다윗 5순 매니져">
     <meta property="og:description" content="인천온누리교회 온유공동체 다윗5순의 순기도제목, 순예배 관리 시스템입니다.">
@@ -21,6 +23,7 @@
     
     <title>온유공동체 다윗 5순 매니져</title>
 
+    <!-- PWA 매니페스트 및 서비스 워커 동적 등록 (앱 설치 팝업 활성화) -->
     <script>
         const manifest = {
             "name": "다윗5순매니져",
@@ -60,6 +63,7 @@
         }
     </script>
     
+    <!-- Scripts -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -86,7 +90,6 @@
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         .card-shadow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
         
-        /* Calendar Styles - minmax(0, 1fr)로 셀 크기 넘침 완벽 방지 */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
         @media (min-width: 768px) { .calendar-grid { gap: 4px; } }
         
@@ -409,10 +412,10 @@
                         </div>
                     )}
 
-                    {/* 새 예배 기록 작성 모달 */}
+                    {/* 새 예배 기록 작성 모달 (흰색 반투명 적용) */}
                     {showAdd && !financeEditMode && (
-                        <div className="fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
-                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full" onClick={e=>e.stopPropagation()}>
+                        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
+                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl" onClick={e=>e.stopPropagation()}>
                                 <Card className="border-t-8 border-[#802B22] fade-in p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
                                     <div className="flex justify-between items-center mb-6 shrink-0">
                                         <h3 className="font-black text-xl md:text-2xl">새 예배 기록 작성</h3>
@@ -448,11 +451,11 @@
                         </div>
                     )}
 
-                    {/* 개별 예배 기록 수정 모달 */}
+                    {/* 개별 예배 기록 수정 모달 (흰색 반투명 적용) */}
                     {editingRecord && (
-                        <div className="fixed inset-0 z-[200] bg-black/60 flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
-                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full" onClick={e=>e.stopPropagation()}>
-                                <Card className="border-t-8 border-[#802B22] relative shadow-2xl p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
+                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
+                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl" onClick={e=>e.stopPropagation()}>
+                                <Card className="border-t-8 border-[#802B22] relative p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
                                     <div className="flex justify-between items-center mb-6 shrink-0">
                                         <h3 className="font-black text-xl md:text-2xl">예배 기록 수정</h3>
                                         <button onClick={() => setEditingRecord(null)} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
@@ -524,9 +527,16 @@
                 <div className="space-y-6 animate-slide-up pb-10">
                     <header className="flex justify-between items-center px-1">
                         <div><span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">Guide</span><h1 className="text-2xl font-black mt-1">순예배 안내</h1></div>
-                        <button onClick={() => isEditing ? save() : setIsEditing(true)} className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all ${isEditing ? 'bg-green-600 text-white shadow-md hover:bg-green-700' : 'bg-gray-800 text-white opacity-90 hover:opacity-100'}`}>
-                            {isEditing ? "저장하기" : "내용 편집"}
-                        </button>
+                        {/* 편집 버튼을 순기도제목 수정 버튼과 동일한 아이콘 및 스타일로 수정 */}
+                        {isEditing ? (
+                            <button onClick={save} className="px-5 py-2.5 rounded-xl text-sm font-black transition-all bg-green-600 text-white shadow-md hover:bg-green-700">
+                                저장하기
+                            </button>
+                        ) : (
+                            <button onClick={() => setIsEditing(true)} className="p-2.5 text-gray-400 bg-white rounded-xl border border-gray-200 hover:text-[#802B22] hover:border-[#802B22] transition-colors active:scale-95 shadow-sm">
+                                <Icon name="edit-3" className="w-5 h-5" />
+                            </button>
+                        )}
                     </header>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -614,7 +624,7 @@
                                     </BulletinRow>
                                 )}
 
-                                {/* 5. 적용과 나눔 - 레이아웃 완벽 분리 수정 */}
+                                {/* 5. 적용과 나눔 */}
                                 {isEditing ? (
                                     <div className="py-4 border-b border-dashed border-gray-200">
                                         <label className="font-black text-[#802B22] text-lg mb-2 block">적 용 및 나 눔</label>
@@ -666,10 +676,10 @@
                         </Card>
                     </div>
 
-                    {/* 찬양 이미지 팝업 최적화 - 스크롤, X버튼 제거, 가로/세로 핏팅 */}
+                    {/* 찬양 이미지 팝업 최적화 - 검은배경 완전 제거 및 꽉찬 레이아웃 */}
                     {fullScreenImage && (
-                        <div className="fixed inset-0 z-[200] bg-black/95 flex items-start sm:items-center justify-center fade-in cursor-pointer overflow-y-auto" onClick={() => setFullScreenImage(null)}>
-                            <img src={fullScreenImage} className="w-full sm:w-auto sm:max-w-full sm:h-screen object-contain" alt="악보 크게 보기" />
+                        <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center fade-in cursor-pointer overflow-y-auto custom-scrollbar" onClick={() => setFullScreenImage(null)}>
+                            <img src={fullScreenImage} className="w-full max-w-5xl h-auto block" alt="악보 크게 보기" />
                         </div>
                     )}
 
@@ -703,33 +713,25 @@
             return Array.from(tags).slice(0, 3); 
         };
 
-        const PrayerCard = ({ m, onUpdate, forceExpand }) => {
-            const [isEditing, setIsEditing] = useState(false);
+        const PrayerCard = ({ m, onEditClick, forceExpand }) => {
             const [isExpanded, setIsExpanded] = useState(true);
-            const [draft, setDraft] = useState(m.prayer || "");
             
             const tags = extractTags(m.prayer);
 
             useEffect(() => {
                 setIsExpanded(forceExpand);
-                if (!forceExpand) setIsEditing(false);
             }, [forceExpand]);
-
-            const handleSave = () => {
-                onUpdate(m.id, draft);
-                setIsEditing(false);
-            };
 
             return (
                 <Card className="p-0 transition-all overflow-hidden border border-gray-100 shadow-sm hover:shadow-md">
-                    <div className="p-4 md:p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors relative" onClick={() => !isEditing && setIsExpanded(!isExpanded)}>
+                    <div className="p-4 md:p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors relative" onClick={() => setIsExpanded(!isExpanded)}>
                         <div className="flex items-center">
                             <div>
                                 <div className="flex items-baseline gap-2 mb-1.5">
                                     <span className="text-xl md:text-2xl font-black text-gray-800">{m.name}</span>
                                     {m.role && <span className="text-sm font-bold text-gray-400">{m.role}</span>}
                                 </div>
-                                {tags.length > 0 && !isEditing && (
+                                {tags.length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                                         {tags.map(tag => <span key={tag} className="text-[10px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md border border-gray-200">#{tag}</span>)}
                                     </div>
@@ -738,9 +740,9 @@
                         </div>
                         <div className="flex flex-col items-center gap-2 mt-1">
                             {!isExpanded && <Icon name="chevron-down" className="text-gray-300 w-6 h-6 shrink-0" />}
-                            {isExpanded && !isEditing && <Icon name="chevron-up" className="text-[#802B22] w-6 h-6 shrink-0" />}
-                            {isExpanded && !isEditing && (
-                                <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); setDraft(m.prayer || ""); }} className="p-2 text-gray-400 bg-white rounded-xl border border-gray-200 hover:text-[#802B22] hover:border-[#802B22] transition-colors active:scale-95 shadow-sm mt-1">
+                            {isExpanded && <Icon name="chevron-up" className="text-[#802B22] w-6 h-6 shrink-0" />}
+                            {isExpanded && (
+                                <button onClick={(e) => { e.stopPropagation(); onEditClick(m); }} className="p-2 text-gray-400 bg-white rounded-xl border border-gray-200 hover:text-[#802B22] hover:border-[#802B22] transition-colors active:scale-95 shadow-sm mt-1">
                                     <Icon name="edit-3" className="w-4 h-4" />
                                 </button>
                             )}
@@ -749,43 +751,27 @@
 
                     {isExpanded && (
                         <div className="px-3.5 pb-5 pt-4 md:px-5 border-t border-gray-50 bg-gray-50/30">
-                            {isEditing ? (
-                                <div className="space-y-4 fade-in">
-                                    <textarea
-                                        value={draft}
-                                        onChange={e => setDraft(e.target.value)}
-                                        placeholder="순기도제목을 상세히 입력하세요..."
-                                        className="w-full bg-white p-4 rounded-2xl border border-gray-200 text-[15px] md:text-base font-bold outline-none focus:border-[#802B22] min-h-[160px] resize-none text-gray-800 shadow-inner custom-scrollbar leading-relaxed"
-                                        autoFocus
-                                    />
-                                    <div className="flex justify-end gap-3">
-                                        <button onClick={() => { setIsEditing(false); setDraft(m.prayer||""); }} className="px-5 py-3 bg-gray-200 text-gray-700 text-sm font-black rounded-xl active:scale-95 hover:bg-gray-300 transition-colors">수정 취소</button>
-                                        <button onClick={handleSave} className="px-6 py-3 bg-[#802B22] text-white text-sm font-black rounded-xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">저장 완료</button>
+                            <div className="relative fade-in">
+                                {m.prayer ? (
+                                    <div className="text-[15px] md:text-base font-bold flex flex-col gap-3">
+                                        {m.prayer.split('\n').map((line, idx) => {
+                                            if (!line.trim()) return <div key={idx} className="h-1"></div>;
+                                            const match = line.trim().match(/^(\d+[\.\)])\s*(.*)/);
+                                            if (match) {
+                                                return (
+                                                    <div key={idx} className="flex gap-2 items-start">
+                                                        <span className="text-[#802B22] font-black shrink-0 leading-[1.7]">{match[1]}</span>
+                                                        <span className="text-gray-700 leading-[1.7] break-words">{match[2]}</span>
+                                                    </div>
+                                                );
+                                            }
+                                            return <div key={idx} className="text-gray-700 leading-[1.7] break-words">{line}</div>;
+                                        })}
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="relative fade-in">
-                                    {m.prayer ? (
-                                        <div className="text-[15px] md:text-base font-bold flex flex-col gap-3">
-                                            {m.prayer.split('\n').map((line, idx) => {
-                                                if (!line.trim()) return <div key={idx} className="h-1"></div>;
-                                                const match = line.trim().match(/^(\d+[\.\)])\s*(.*)/);
-                                                if (match) {
-                                                    return (
-                                                        <div key={idx} className="flex gap-2 items-start">
-                                                            <span className="text-[#802B22] font-black shrink-0 leading-[1.7]">{match[1]}</span>
-                                                            <span className="text-gray-700 leading-[1.7] break-words">{match[2]}</span>
-                                                        </div>
-                                                    );
-                                                }
-                                                return <div key={idx} className="text-gray-700 leading-[1.7] break-words">{line}</div>;
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm md:text-base text-gray-400 font-bold italic py-2">등록된 순기도제목이 없습니다.</p>
-                                    )}
-                                </div>
-                            )}
+                                ) : (
+                                    <p className="text-sm md:text-base text-gray-400 font-bold italic py-2">등록된 순기도제목이 없습니다.</p>
+                                )}
+                            </div>
                         </div>
                     )}
                 </Card>
@@ -818,10 +804,29 @@
             const [selectedTag, setSelectedTag] = useState(null);
             const [isAllExpanded, setIsAllExpanded] = useState(true);
 
+            // 기도제목 수정 모달을 위한 상태
+            const [editingMember, setEditingMember] = useState(null);
+            const [editDraft, setEditDraft] = useState("");
+
             const filteredMembers = useMemo(() => {
                 if (!selectedTag) return displayMembers;
                 return displayMembers.filter(m => extractTags(m.prayer).includes(selectedTag));
             }, [displayMembers, selectedTag]);
+
+            const openEdit = (m) => {
+                setEditingMember(m);
+                setEditDraft(m.prayer || "");
+            };
+
+            const closeEdit = () => {
+                setEditingMember(null);
+                setEditDraft("");
+            };
+
+            const handleSavePrayer = () => {
+                onUpdate(editingMember.id, editDraft);
+                closeEdit();
+            };
 
             return (
                 <div className="space-y-6 animate-slide-up pb-6">
@@ -853,10 +858,40 @@
                         {filteredMembers.length === 0 && <div className="text-center py-12 text-gray-400 font-bold text-base w-full block col-span-full">해당되는 순기도제목이 없습니다.</div>}
                         {filteredMembers.map(m => (
                             <div key={m.id} className="break-inside-avoid mb-6 w-full block">
-                                <PrayerCard m={m} onUpdate={onUpdate} forceExpand={isAllExpanded} />
+                                <PrayerCard m={m} onEditClick={openEdit} forceExpand={isAllExpanded} />
                             </div>
                         ))}
                     </div>
+
+                    {/* 기도제목 수정 모달 레이어 (새 예배기록 작성과 동일한 형태) */}
+                    {editingMember && (
+                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={closeEdit}>
+                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl" onClick={e=>e.stopPropagation()}>
+                                <Card className="border-t-8 border-[#802B22] fade-in p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
+                                    <div className="flex justify-between items-center mb-6 shrink-0">
+                                        <div>
+                                            <span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase block mb-1">PRAYER EDIT</span>
+                                            <h3 className="font-black text-xl md:text-2xl">{editingMember.name} 기도제목 수정</h3>
+                                        </div>
+                                        <button onClick={closeEdit} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
+                                    </div>
+                                    <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-4">
+                                        <textarea
+                                            value={editDraft}
+                                            onChange={e => setEditDraft(e.target.value)}
+                                            placeholder="순기도제목을 상세히 입력하세요..."
+                                            className="w-full bg-gray-50 p-5 rounded-2xl border border-gray-200 text-[15px] md:text-base font-bold outline-none focus:border-[#802B22] min-h-[250px] resize-none text-gray-800 custom-scrollbar leading-relaxed"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="flex gap-3 pt-4 border-t border-gray-100 mt-2 shrink-0">
+                                        <button onClick={closeEdit} className="w-1/3 py-4 md:py-5 bg-gray-100 text-gray-600 rounded-2xl font-black text-lg active:scale-95 hover:bg-gray-200">취소</button>
+                                        <button onClick={handleSavePrayer} className="w-2/3 py-4 md:py-5 bg-[#802B22] text-white rounded-2xl font-black text-lg shadow-lg active:scale-95 hover:bg-[#6c231c]">저장 완료</button>
+                                    </div>
+                                </Card>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -1125,9 +1160,10 @@
                         </div>
                     </div>
 
+                    {/* 흰색 반투명 모달 백그라운드 일괄 적용 */}
                     {showAuth && (
-                        <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
-                            <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
+                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
+                            <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-gray-100" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-black mb-6">관리자 비밀번호</h3>
                                 <input 
                                     type="password" 
@@ -1145,8 +1181,8 @@
                     )}
                     
                     {showChangePwd && (
-                        <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
-                            <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl" onClick={e=>e.stopPropagation()}>
+                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
+                            <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-gray-100" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-xl font-black mb-6">새 비밀번호 설정</h3>
                                 <input 
                                     type="text" 
@@ -1199,7 +1235,7 @@
                                 { familyId: "f1", name: "조은미", role: "안수집사", gender: "F", children: "소율('04) 채율('07)", vehicle: "", prayer: "1. 소율이와 채율이가 어떠한 순간에도 주님을 예배할 수 있기를 기도드립니다.\n2. 졸업 후의 진로를 고민하고 기도하는 소율이를 주님이 원하시는 길로 인도하시길 기도드립니다.(취업, 대학원 등)\n3. 고 3인 채율이의 학업과 대학을 위해 기도드립니다.\n4. 사업장을 축복해주시고, 최선을 다하지만 결과를 맡길 수 있는 믿음, 허락해 주시길 기도드립니다.\n5. 인생의 후반에 주님께서 주실 비전을 기대하며 기도합니다.", isParticipating: true, order: 2 },
                                 { familyId: "f2", name: "주종성", role: "순장", gender: "M", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 온가족 주님 안에 거하고 다윗5순 모든 순식구들에게 뜨거운 믿음 충만주시길 기도합니다.\n2. 교회에서 맡겨진 사역을 성실히 감당하고 주님께서 주신 자리에 합당한 삶을 살아가길 기도합니다.\n3. 회사 프로젝트와 부서장 업무를 잘 감당하고 믿지 않는 동료들에게 복음을 전하는 축복의 통로가 되길 기도합니다.\n4. 시언, 이언 두 형제가 서로 사랑하고 우애있게 성장하길 기도합니다.\n5. 양가 부모님 건강주시고 배우자를 더욱 깊이 사랑하게 해주시길 기도합니다.", isParticipating: true, order: 3 },
                                 { familyId: "f2", name: "안지훈", role: "순모", gender: "F", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 하나님 앞에 올바로 설 수 있는 가정이 되길 기도합니다.\n2. 하나님과 친밀한 관계를 맺으며 하나님의 말씀을 묵상하는 자가 되길 기도합니다.\n3. 두 아이들에 대한 조급한 마음과 걱정을 내려놓고 하나님의 뜻이 무엇인지를 구하는 자가 되길 기도합니다.\n4. 두 아이들이 믿음 가운데 성장하여 하나님을 깊이 알아가며 예배하는자로 성장하길 기도합니다.", isParticipating: true, order: 4 },
-                                { familyId: "f3", name: "조성민", role: "부순장", gender: "M", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 어머니, 장인/장모님의 정신적 육체적 건강\n2. 아내의 정신적 육체적 건강\n3. 고등학생이 된 큰아들과 중학생이 된 작은 아들이 성장하는 과정에서 부모로서의 세속적 욕심을 내려놓고 하나님의 자녀로서 건강한 자아가 완성되는 과정을 든든히 후원할수 있는 부모가 될수 있기를.\n4. 제조업을 운영하는 대표로서 순간 순간의 결정이 이익만을 좇는 것이아니라 하나님의 뜻을 구하고 그 뜻에 따를수 있기를.\n5. 교회 공동체 안에서 역할에 대한 고민을 시작하고 준비할수 있도록 기도하는 시간", isParticipating: true, order: 5 },
+                                { familyId: "f3", name: "조성민", role: "부순장", gender: "M", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 어머니, 장인/장모님의 정신적 육체적 건강\n2. 아내의 정신적 육체적 건강\n3. 고등학생이 된 큰아들과 중학생이 된 신입생으로서의 생활에 잘 적응하고 성장하는 과정에서 부모로서의 세속적 욕심을 내려놓고 하나님의 자녀로서 건강한 자아가 완성되는 과정을 든든히 후원할수 있는 부모가 될수 있기를.\n4. 제조업을 운영하는 대표로서 순간 순간의 결정이 이익만을 좇는 것이아니라 하나님의 뜻을 구하고 그 뜻에 따를수 있기를.\n5. 교회 공동체 안에서 역할에 대한 고민을 시작하고 준비할수 있도록 기도하는 시간", isParticipating: true, order: 5 },
                                 { familyId: "f3", name: "최윤정", role: "집사", gender: "F", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 식구들 모두 온전하고 바르게 하나님 사람으로 설 수 있도록\n2. 올해 결혼한지 20년인데 그 시간만큼 잘 지내왔는지 부부가 함께 돌아보는 기회를 가지길 & 앞으로도 건강한 가정을 이루는데 함께 힘쓰길\n3. 윤성이와 정민이가 예배공동체에 잘 참여해서 감사 그곳에서 믿음과 인생의 멘토를 만나길", isParticipating: true, order: 6 },
                                 { familyId: "f4", name: "최성섭", role: "성도", gender: "M", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님께서 인정하시는 믿음의 가정이 되도록.\n2. 윤호가 하나님께서 주시는 비전을 가슴에 품고 열심히 공부하고 생활하도록\n3. 슬기가 예배를 회복하고 친구들과의 관계도 원만하길.\n4. 지호가 예수님의 성품을 닮아가며 조급해하지 않도록", isParticipating: true, order: 7 },
                                 { familyId: "f4", name: "황현선", role: "권찰", gender: "F", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님의 뜻을 구하며, 일상의 삶 속에서 동행하심을 느낄 수 있도록", isParticipating: true, order: 8 },
