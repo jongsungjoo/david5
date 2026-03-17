@@ -407,7 +407,7 @@
                                                     </div>
                                                 </div>
                                                 <div className="text-right flex flex-col items-end gap-1.5">
-                                                    <button onClick={() => setEditingRecord(h)} className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg mb-1 active:scale-95 transition-transform flex items-center gap-1 hover:bg-blue-100"><Icon name="edit-3" className="w-3.5 h-3.5"/> 수정</button>
+                                                    <button onClick={() => setEditingRecord(h)} className="p-2 text-[#802B22] bg-red-50 rounded-xl mb-1 active:scale-95 transition-transform flex items-center justify-center hover:bg-red-100 shadow-sm"><Icon name="edit-3" className="w-4 h-4"/></button>
                                                     <div className="text-[11px] font-black text-gray-400 uppercase mb-0.5">순헌금</div>
                                                     <div className="font-black text-gray-800 text-xl">₩{(Number(h.offering)||0).toLocaleString()}</div>
                                                 </div>
@@ -645,17 +645,70 @@
                 setPinchDist(null);
             };
 
+            const copyToClipboard = (text) => {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('복사되었습니다: ' + text);
+                    }).catch(err => {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+            };
+
+            const fallbackCopy = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('복사되었습니다: ' + text);
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    alert('복사에 실패했습니다.');
+                }
+                document.body.removeChild(textArea);
+            };
+
+            const renderAnnouncements = (text) => {
+                if (!text) return "등록된 광고 및 일정이 없습니다.";
+                // 숫자와 하이픈이 연속된 형태의 문자열(계좌번호, 전화번호 등)을 감지
+                const regex = /(\d+(?:-\d+)+)/g;
+                const parts = text.split(regex);
+                return parts.map((part, i) => {
+                    if (part.match(regex) && part.length >= 8) {
+                        return (
+                            <span 
+                                key={i} 
+                                onClick={() => copyToClipboard(part)}
+                                className="text-blue-600 underline underline-offset-4 cursor-pointer hover:text-blue-800 transition-colors"
+                                title="복사하기"
+                            >
+                                {part}
+                            </span>
+                        );
+                    }
+                    return <span key={i}>{part}</span>;
+                });
+            };
+
             return (
                 <div className="space-y-6 animate-slide-up pb-10">
                     <header className="flex justify-between items-center px-1">
                         <div><span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">Guide</span><h1 className="text-2xl font-black mt-1">순예배 안내</h1></div>
                         {isEditing ? (
-                            <button onClick={save} className="px-5 py-2.5 rounded-xl text-sm font-black transition-all bg-green-600 text-white shadow-md hover:bg-green-700">
+                            <button onClick={save} className="px-5 py-2.5 rounded-xl text-sm font-black transition-all bg-[#802B22] text-white shadow-md hover:bg-[#6c231c]">
                                 저장하기
                             </button>
                         ) : (
-                            <button onClick={() => setIsEditing(true)} className="p-2.5 text-gray-400 bg-white rounded-xl border border-gray-200 hover:text-[#802B22] hover:border-[#802B22] transition-colors active:scale-95 shadow-sm">
-                                <Icon name="edit-3" className="w-5 h-5" />
+                            <button onClick={() => setIsEditing(true)} className="p-2 md:p-2.5 text-[#802B22] bg-red-50 rounded-xl active:scale-95 transition-transform flex items-center justify-center hover:bg-red-100 shadow-sm">
+                                <Icon name="edit-3" className="w-4 h-4 md:w-5 md:h-5" />
                             </button>
                         )}
                     </header>
@@ -749,7 +802,7 @@
                                 {isEditing ? (
                                     <div className="py-4 border-b border-dashed border-gray-200">
                                         <label className="font-black text-[#802B22] text-lg mb-2 block">적 용 및 나 눔</label>
-                                        <input value={form.applicationText !== undefined ? form.applicationText : "실천할 일을 결단하고 나누기"} onChange={e => setForm({...form, applicationText: e.target.value})} placeholder="적용과 나눔 내용 입력" className="w-full bg-white p-3 rounded-xl font-bold text-lg outline-none border border-gray-200 focus:border-[#802B22] transition-colors" />
+                                        <textarea value={form.applicationText !== undefined ? form.applicationText : "실천할 일을 결단하고 나누기"} onChange={e => setForm({...form, applicationText: e.target.value})} placeholder="적용과 나눔 내용 입력..." className="w-full h-40 bg-white p-4 rounded-xl text-base font-medium outline-none border border-gray-200 focus:border-[#802B22] transition-colors custom-scrollbar resize-none" />
                                     </div>
                                 ) : (
                                     <div className="py-3 md:py-4 group flex flex-col">
@@ -791,7 +844,7 @@
                                 <textarea value={form.announcements || ""} onChange={e => setForm({...form, announcements: e.target.value})} placeholder="광고 및 주요 일정 내용을 입력하세요..." className="w-full h-64 bg-gray-50 p-5 rounded-2xl text-lg font-bold text-gray-800 outline-none border border-gray-200 min-h-[200px] leading-loose focus:border-[#802B22] transition-colors custom-scrollbar" />
                             ) : (
                                 <div className="text-lg md:text-xl text-gray-700 font-bold leading-[2.2] whitespace-pre-wrap px-2">
-                                    {form.announcements || "등록된 광고 및 일정이 없습니다."}
+                                    {renderAnnouncements(form.announcements)}
                                 </div>
                             )}
                         </Card>
@@ -878,7 +931,7 @@
                             {!isExpanded && <Icon name="chevron-down" className="text-gray-300 w-6 h-6 shrink-0" />}
                             {isExpanded && <Icon name="chevron-up" className="text-[#802B22] w-6 h-6 shrink-0" />}
                             {isExpanded && (
-                                <button onClick={(e) => { e.stopPropagation(); onEditClick(m); }} className="p-2 text-gray-400 bg-white rounded-xl border border-gray-200 hover:text-[#802B22] hover:border-[#802B22] transition-colors active:scale-95 shadow-sm mt-1">
+                                <button onClick={(e) => { e.stopPropagation(); onEditClick(m); }} className="p-2 text-[#802B22] bg-red-50 rounded-xl active:scale-95 transition-transform flex items-center justify-center hover:bg-red-100 shadow-sm mt-1">
                                     <Icon name="edit-3" className="w-4 h-4" />
                                 </button>
                             )}
@@ -998,7 +1051,6 @@
                         ))}
                     </div>
 
-                    {/* 기도제목 수정 모달 레이어 */}
                     {editingMember && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={closeEdit}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
