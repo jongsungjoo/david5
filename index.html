@@ -999,9 +999,12 @@
             const [editDraft, setEditDraft] = useState("");
 
             const filteredMembers = useMemo(() => {
+                if (selectedTag === '가나다순') {
+                    return [...activeMembers].sort((a, b) => a.name.localeCompare(b.name));
+                }
                 if (!selectedTag) return displayMembers;
                 return displayMembers.filter(m => extractTags(m.prayer).includes(selectedTag));
-            }, [displayMembers, selectedTag]);
+            }, [displayMembers, activeMembers, selectedTag]);
 
             const openEdit = (m) => {
                 setEditingMember(m);
@@ -1018,6 +1021,44 @@
                 closeEdit();
             };
 
+            const handleCopyAll = () => {
+                const prayers = activeMembers
+                    .filter(m => m.prayer && m.prayer.trim() !== '')
+                    .sort((a, b) => (a.order || 99) - (b.order || 99));
+
+                let text = "★다윗5순 기도제목★\n\n";
+                prayers.forEach(m => {
+                    text += `[${m.name} ${m.role || ''}]\n${m.prayer}\n\n`;
+                });
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('전체 기도제목이 복사되었습니다.');
+                    }).catch(() => fallbackCopy(text));
+                } else {
+                    fallbackCopy(text);
+                }
+            };
+
+            const fallbackCopy = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('전체 기도제목이 복사되었습니다.');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    alert('복사에 실패했습니다.');
+                }
+                document.body.removeChild(textArea);
+            };
+
             return (
                 <div className="space-y-6 animate-slide-up pb-6">
                     <header className="px-1 flex justify-between items-end">
@@ -1029,15 +1070,17 @@
 
                     <div className="flex flex-wrap gap-2.5 px-1">
                         <button onClick={() => setSelectedTag(null)} className={`px-4 py-2 rounded-full text-sm font-black transition-colors shadow-sm ${!selectedTag ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>전체보기</button>
+                        <button onClick={() => setSelectedTag('가나다순')} className={`px-4 py-2 rounded-full text-sm font-black transition-colors shadow-sm ${selectedTag === '가나다순' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>#가나다순</button>
                         {allTags.map(tag => (
                             <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? null : tag)} className={`px-4 py-2 rounded-full text-sm font-black transition-colors shadow-sm ${selectedTag === tag ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>#{tag}</button>
                         ))}
                     </div>
 
                     <div className="flex justify-between items-center px-1">
-                        <span className="text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
+                        <button onClick={handleCopyAll} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="전체 복사">
+                            <Icon name="copy" className="w-3.5 h-3.5 text-[#802B22]" />
                             총 {activeMembers.filter(m => m.prayer).length}개
-                        </span>
+                        </button>
                         <button onClick={() => setIsAllExpanded(!isAllExpanded)} className="text-sm font-black text-[#802B22] flex items-center gap-1.5 bg-red-50 px-4 py-2 rounded-xl active:scale-95 transition-transform shadow-sm hover:bg-red-100 border border-red-100">
                             <Icon name={isAllExpanded ? "chevrons-up" : "chevrons-down"} className="w-4 h-4" />
                             {isAllExpanded ? "순기도제목 모두 접기" : "순기도제목 모두 펼치기"}
