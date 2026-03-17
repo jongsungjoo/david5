@@ -413,19 +413,24 @@
                                                 </div>
                                             </div>
                                             
-                                            {/* 변경된 카드 내용 레이아웃: 장소 -> 참석인원 -> 메모 */}
+                                            {/* 조회 화면에서만: 장소 및 참석인원 요약 행 -> 참석자 명단 -> 메모 순서로 배치 */}
                                             {(h.location || h.notes || (h.members && h.members.length > 0)) && (
                                                 <div className="pt-3 border-t border-gray-50 flex flex-col gap-3">
-                                                    {h.location && (
-                                                        <div className="text-sm font-bold text-gray-600 flex items-center gap-1.5">
-                                                            <Icon name="map-pin" className="w-4 h-4 text-[#802B22]" /> {h.location}
+                                                    
+                                                    {(h.location || (h.members && h.members.length > 0)) && (
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div className="text-sm font-bold text-gray-600 flex items-center gap-1.5">
+                                                                {h.location && <><Icon name="map-pin" className="w-4 h-4 text-[#802B22] shrink-0" /> <span className="break-keep leading-tight">{h.location}</span></>}
+                                                            </div>
+                                                            {h.members && h.members.length > 0 && (
+                                                                <span className="bg-red-50 text-[#802B22] text-[11px] sm:text-xs font-black px-2.5 py-1.5 rounded-lg shrink-0">{h.members.length}명 참석</span>
+                                                            )}
                                                         </div>
                                                     )}
-                                                    
+
                                                     {h.members && h.members.length > 0 && (
                                                         <div className="flex flex-wrap gap-2">
-                                                            {h.members.map(name => <span key={name} className="bg-gray-50 text-gray-600 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-100">{name}</span>)}
-                                                            <span className="bg-red-50 text-[#802B22] text-xs font-black px-2.5 py-1.5 rounded-lg ml-auto">{h.members.length}명 참석</span>
+                                                            {h.members.map(name => <span key={name} className="bg-gray-50 text-gray-600 text-[11px] sm:text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-100">{name}</span>)}
                                                         </div>
                                                     )}
 
@@ -443,7 +448,7 @@
                         </div>
                     )}
 
-                    {/* 새 예배 기록 작성 모달 (공간 최적화 및 장소/헌금 순서 변경) */}
+                    {/* 새 예배 기록 작성 모달 */}
                     {showAdd && !financeEditMode && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
@@ -497,7 +502,7 @@
                         document.body
                     )}
 
-                    {/* 개별 예배 기록 수정 모달 (공간 최적화 및 장소/헌금 순서 변경) */}
+                    {/* 개별 예배 기록 수정 모달 */}
                     {editingRecord && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
@@ -567,14 +572,14 @@
                                     value={authInput} 
                                     onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleAuthConfirm(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#2C3552] transition-colors`} 
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
                                     placeholder="••••••••" 
                                     autoFocus
                                 />
                                 {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
                                 <div className="flex gap-3 mt-6">
                                     <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleAuthConfirm} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">확인</button>
+                                    <button onClick={handleAuthConfirm} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
                                 </div>
                             </div>
                         </div>,
@@ -993,6 +998,7 @@
                         ))}
                     </div>
 
+                    {/* 기도제목 수정 모달 레이어 */}
                     {editingMember && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={closeEdit}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
@@ -1301,14 +1307,14 @@
                                     value={authInput} 
                                     onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#2C3552] transition-colors`} 
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
                                     placeholder="••••••••" 
                                     autoFocus
                                 />
                                 {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
                                 <div className="flex gap-3 mt-6">
                                     <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleLogin} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">확인</button>
+                                    <button onClick={handleLogin} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
                                 </div>
                             </div>
                         </div>,
@@ -1325,12 +1331,12 @@
                                     value={newPwd} 
                                     onChange={e=>setNewPwd(e.target.value)} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleChangePwd(); }}
-                                    className="w-full p-4 bg-[#F3F4F6] border border-transparent rounded-2xl font-black text-center text-lg mb-6 outline-none focus:border-[#2C3552] transition-colors" 
+                                    className="w-full p-4 bg-[#F3F4F6] border border-transparent rounded-2xl font-black text-center text-lg mb-6 outline-none focus:border-[#802B22] transition-colors" 
                                     placeholder="새로운 비밀번호 입력"
                                 />
                                 <div className="flex gap-3 mt-2">
                                     <button onClick={() => setShowChangePwd(false)} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleChangePwd} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">변경 완료</button>
+                                    <button onClick={handleChangePwd} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">변경 완료</button>
                                 </div>
                             </div>
                         </div>,
