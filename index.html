@@ -412,19 +412,24 @@
                         </div>
                     )}
 
-                    {/* ReactDOM.createPortal을 사용하여 프레임 구속 방지 */}
+                    {/* 새 예배 기록 작성 모달 (공간 최적화 및 장소/헌금 순서 변경) */}
                     {showAdd && !financeEditMode && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
-                                <Card className="border-t-8 border-[#802B22] fade-in p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
-                                    <div className="flex justify-between items-center mb-6 shrink-0">
-                                        <h3 className="font-black text-xl md:text-2xl">새 예배 기록 작성</h3>
-                                        <button onClick={() => setShowAdd(false)} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
+                                <Card className="border-t-8 border-[#802B22] fade-in p-4 md:p-6 flex flex-col overflow-hidden w-full max-h-[85vh]">
+                                    
+                                    <div className="flex justify-between items-center mb-3 shrink-0 pb-2 border-b border-gray-50">
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => setShowAdd(false)} className="p-1 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="w-6 h-6"/></button>
+                                            <h3 className="font-black text-lg md:text-xl text-gray-800">새 예배 기록</h3>
+                                        </div>
+                                        <button onClick={() => { onAddRecord(newRecord); setShowAdd(false); setNewRecord({ date: getLocalYYYYMMDD(new Date()), type: "순예배", members: [], offering: "", location: "", notes: "" }); }} className="px-5 py-1.5 bg-[#802B22] text-white rounded-lg font-black text-xs shadow-md active:scale-95 hover:bg-[#6c231c]">저장</button>
                                     </div>
-                                    <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-4">
-                                        <div className="flex flex-col sm:flex-row gap-3 w-full">
-                                            <input type="date" value={newRecord.date} onChange={e => setNewRecord({...newRecord, date: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
-                                            <select value={newRecord.type || "순예배"} onChange={e => setNewRecord({...newRecord, type: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none text-gray-700 border border-gray-200 focus:border-[#802B22]">
+
+                                    <div className="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-2">
+                                        <div className="flex gap-2 w-full">
+                                            <input type="date" value={newRecord.date} onChange={e => setNewRecord({...newRecord, date: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22]" />
+                                            <select value={newRecord.type || "순예배"} onChange={e => setNewRecord({...newRecord, type: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none text-gray-700 border border-gray-200 focus:border-[#802B22]">
                                                 <option value="순예배">순예배</option>
                                                 <option value="휴강">휴강</option>
                                                 <option value="종강예배">종강예배</option>
@@ -432,19 +437,22 @@
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
-                                        <input type="number" step="10000" placeholder="당일 총 헌금액" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
-                                        <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={newRecord.location || ""} onChange={e => setNewRecord({...newRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
-                                        <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={newRecord.notes || ""} onChange={e => setNewRecord({...newRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
-
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-gray-100 pt-4">
-                                            {activeMembers.map(m => (
-                                                <button key={m.id} onClick={() => setNewRecord(prev => ({...prev, members: prev.members.includes(m.name) ? prev.members.filter(n => n !== m.name) : [...prev.members, m.name]}))} className={`py-4 rounded-xl text-sm font-bold transition-all border-2 ${newRecord.members.includes(m.name) ? 'bg-[#802B22] border-[#802B22] text-white shadow-md' : 'bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100'}`}>{m.name}</button>
-                                            ))}
+                                        <div className="flex gap-2 w-full">
+                                            <input type="text" placeholder="장소 (예: OOO순원 집)" value={newRecord.location || ""} onChange={e => setNewRecord({...newRecord, location: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22]" />
+                                            <input type="number" step="10000" placeholder="헌금액 (원)" value={newRecord.offering} onChange={e => setNewRecord({...newRecord, offering: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22]" />
                                         </div>
-                                    </div>
-                                    <div className="shrink-0 pt-4 mt-2">
-                                        <button onClick={() => { onAddRecord(newRecord); setShowAdd(false); setNewRecord({ date: getLocalYYYYMMDD(new Date()), type: "순예배", members: [], offering: "", location: "", notes: "" }); }} className="w-full py-4 md:py-5 bg-[#802B22] text-white rounded-2xl font-black shadow-lg active:scale-95 text-lg md:text-xl hover:bg-[#6c231c]">저장하기</button>
+
+                                        <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={newRecord.notes || ""} onChange={e => setNewRecord({...newRecord, notes: e.target.value})} className="w-full p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22] min-h-[60px] custom-scrollbar resize-none" />
+
+                                        <div className="pt-1">
+                                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block px-1">참석 인원 ({newRecord.members.length}/{activeMembers.length})</span>
+                                            <div className="grid grid-cols-3 gap-1.5">
+                                                {activeMembers.map(m => (
+                                                    <button key={m.id} onClick={() => setNewRecord(prev => ({...prev, members: prev.members.includes(m.name) ? prev.members.filter(n => n !== m.name) : [...prev.members, m.name]}))} className={`py-2 rounded-lg text-xs font-bold transition-all border-2 ${newRecord.members.includes(m.name) ? 'bg-[#802B22] border-[#802B22] text-white shadow-sm' : 'bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100'}`}>{m.name}</button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </Card>
                             </div>
@@ -452,19 +460,27 @@
                         document.body
                     )}
 
-                    {/* 개별 예배 기록 수정 모달 (포털 적용) */}
+                    {/* 개별 예배 기록 수정 모달 (공간 최적화 및 장소/헌금 순서 변경) */}
                     {editingRecord && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
-                                <Card className="border-t-8 border-[#802B22] relative p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
-                                    <div className="flex justify-between items-center mb-6 shrink-0">
-                                        <h3 className="font-black text-xl md:text-2xl">예배 기록 수정</h3>
-                                        <button onClick={() => setEditingRecord(null)} className="p-2 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="x" className="w-6 h-6"/></button>
+                                <Card className="border-t-8 border-[#802B22] relative p-4 md:p-6 flex flex-col overflow-hidden w-full max-h-[85vh]">
+                                    
+                                    <div className="flex justify-between items-center mb-3 shrink-0 pb-2 border-b border-gray-50">
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => setEditingRecord(null)} className="p-1 text-gray-400 active:scale-95 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="w-6 h-6"/></button>
+                                            <h3 className="font-black text-lg md:text-xl text-gray-800">예배 기록 수정</h3>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => { onDeleteRecord(editingRecord.id); setEditingRecord(null); }} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-xs active:scale-95 hover:bg-red-100">삭제</button>
+                                            <button onClick={() => { onUpdateRecord(editingRecord.id, editingRecord); setEditingRecord(null); }} className="px-4 py-1.5 bg-[#802B22] text-white rounded-lg font-black text-xs shadow-md active:scale-95 hover:bg-[#6c231c]">수정</button>
+                                        </div>
                                     </div>
-                                    <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-4">
-                                        <div className="flex flex-col sm:flex-row gap-3 w-full">
-                                            <input type="date" value={editingRecord.date} onChange={e => setEditingRecord({...editingRecord, date: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
-                                            <select value={editingRecord.type || "순예배"} onChange={e => setEditingRecord({...editingRecord, type: e.target.value})} className="flex-1 min-w-0 w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none text-gray-700 border border-gray-200 focus:border-[#802B22]">
+
+                                    <div className="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-2">
+                                        <div className="flex gap-2 w-full">
+                                            <input type="date" value={editingRecord.date} onChange={e => setEditingRecord({...editingRecord, date: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22]" />
+                                            <select value={editingRecord.type || "순예배"} onChange={e => setEditingRecord({...editingRecord, type: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none text-gray-700 border border-gray-200 focus:border-[#802B22]">
                                                 <option value="순예배">순예배</option>
                                                 <option value="휴강">휴강</option>
                                                 <option value="종강예배">종강예배</option>
@@ -472,20 +488,22 @@
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
-                                        <input type="number" step="10000" placeholder="당일 총 헌금액" value={editingRecord.offering} onChange={e => setEditingRecord({...editingRecord, offering: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
                                         
-                                        <input type="text" placeholder="장소 (예: 교회, OOO순원 집, 카페 등)" value={editingRecord.location || ""} onChange={e => setEditingRecord({...editingRecord, location: e.target.value})} className="w-full min-w-0 p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22]" />
-                                        <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={editingRecord.notes || ""} onChange={e => setEditingRecord({...editingRecord, notes: e.target.value})} className="w-full p-3 md:p-4 bg-gray-50 rounded-2xl font-bold text-base md:text-lg outline-none border border-gray-200 focus:border-[#802B22] min-h-[100px] custom-scrollbar resize-none" />
-
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-gray-100 pt-4">
-                                            {activeMembers.map(m => (
-                                                <button key={m.id} onClick={() => setEditingRecord(prev => ({...prev, members: prev.members.includes(m.name) ? prev.members.filter(n => n !== m.name) : [...prev.members, m.name]}))} className={`py-4 rounded-xl text-sm font-bold transition-all border-2 ${editingRecord.members.includes(m.name) ? 'bg-[#802B22] border-[#802B22] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'}`}>{m.name}</button>
-                                            ))}
+                                        <div className="flex gap-2 w-full">
+                                            <input type="text" placeholder="장소 (예: OOO순원 집)" value={editingRecord.location || ""} onChange={e => setEditingRecord({...editingRecord, location: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22]" />
+                                            <input type="number" step="10000" placeholder="헌금액 (원)" value={editingRecord.offering} onChange={e => setEditingRecord({...editingRecord, offering: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22]" />
                                         </div>
-                                    </div>
-                                    <div className="flex gap-3 pt-4 border-t border-gray-100 mt-2 shrink-0">
-                                        <button onClick={() => { onDeleteRecord(editingRecord.id); setEditingRecord(null); }} className="w-1/3 py-4 md:py-5 bg-red-50 text-red-600 rounded-2xl font-black text-lg active:scale-95 hover:bg-red-100">삭제</button>
-                                        <button onClick={() => { onUpdateRecord(editingRecord.id, editingRecord); setEditingRecord(null); }} className="w-2/3 py-4 md:py-5 bg-[#802B22] text-white rounded-2xl font-black text-lg shadow-lg active:scale-95 hover:bg-[#6c231c]">수정 완료</button>
+
+                                        <textarea placeholder="특이사항 (기도제목 업데이트, 결석 사유 등)" value={editingRecord.notes || ""} onChange={e => setEditingRecord({...editingRecord, notes: e.target.value})} className="w-full p-2.5 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-200 focus:border-[#802B22] min-h-[60px] custom-scrollbar resize-none" />
+
+                                        <div className="pt-1">
+                                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block px-1">참석 인원 ({editingRecord.members.length}/{activeMembers.length})</span>
+                                            <div className="grid grid-cols-3 gap-1.5">
+                                                {activeMembers.map(m => (
+                                                    <button key={m.id} onClick={() => setEditingRecord(prev => ({...prev, members: prev.members.includes(m.name) ? prev.members.filter(n => n !== m.name) : [...prev.members, m.name]}))} className={`py-2 rounded-lg text-xs font-bold transition-all border-2 ${editingRecord.members.includes(m.name) ? 'bg-[#802B22] border-[#802B22] text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'}`}>{m.name}</button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </Card>
                             </div>
@@ -677,7 +695,6 @@
                         </Card>
                     </div>
 
-                    {/* 포털을 활용한 완전한 전체화면 찬양 이미지 (검은색 완전 제거, 흰 배경 꽉 찬 비율 맞춤) */}
                     {fullScreenImage && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center fade-in cursor-pointer overflow-y-auto custom-scrollbar" onClick={() => setFullScreenImage(null)}>
                             <img src={fullScreenImage} className="w-full h-full object-contain block" alt="악보 크게 보기" />
@@ -686,7 +703,7 @@
                     )}
 
                     {fullScreenBible && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white flex flex-col p-6 md:p-12 fade-in overflow-y-auto custom-scrollbar" onClick={() => setFullScreenBible(false)}>
+                        <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col p-6 md:p-12 fade-in overflow-y-auto custom-scrollbar" onClick={() => setFullScreenBible(false)}>
                             <div className="flex justify-between items-center mb-10 shrink-0 max-w-4xl mx-auto w-full">
                                 <span className="text-[#802B22] font-black tracking-[0.2em] uppercase text-sm border-b-2 border-[#802B22] pb-1">Scripture Reading</span>
                                 <button className="p-2 text-gray-400 hover:text-[#802B22] hover:bg-red-50 rounded-full transition-colors"><Icon name="x" className="w-10 h-10" /></button>
@@ -807,7 +824,6 @@
             const [selectedTag, setSelectedTag] = useState(null);
             const [isAllExpanded, setIsAllExpanded] = useState(true);
 
-            // 기도제목 수정 모달을 위한 상태
             const [editingMember, setEditingMember] = useState(null);
             const [editDraft, setEditDraft] = useState("");
 
@@ -866,7 +882,6 @@
                         ))}
                     </div>
 
-                    {/* 기도제목 수정 모달 레이어 (포털 적용하여 화면 덮음) */}
                     {editingMember && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={closeEdit}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
@@ -1056,7 +1071,6 @@
                 }
             };
 
-            // 전체화면 모달이므로 Portal로 이동
             return ReactDOM.createPortal(
                 <div className="fixed inset-0 z-[150] bg-[#F3F4F6] flex flex-col animate-slide-up">
                     <header className="p-4 bg-white border-b border-gray-100 shrink-0 shadow-sm safe-top flex justify-center">
@@ -1165,7 +1179,6 @@
                         </div>
                     </div>
 
-                    {/* 흰색 반투명 모달 백그라운드 일괄 적용 (여기도 포털 안쪽이므로 정상 작동) */}
                     {showAuth && (
                         <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
                             <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-gray-100" onClick={e=>e.stopPropagation()}>
