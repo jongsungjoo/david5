@@ -284,40 +284,42 @@
                     </header>
 
                     {financeEditMode ? (
-                        <div className="max-w-2xl mx-auto w-full">
-                            <Card className="border-4 border-[#802B22] bg-white relative z-20 fade-in p-5 md:p-8">
-                                <div className="flex justify-between items-center mb-5 md:mb-8">
-                                    <h3 className="font-black text-lg md:text-2xl text-gray-800 flex items-center gap-2"><Icon name="edit-3" className="text-[#802B22] w-5 h-5 md:w-6 md:h-6"/> 누적순헌금 현황</h3>
-                                    <button onClick={() => setFinanceEditMode(false)} className="p-2 bg-gray-50 rounded-full text-gray-500 active:scale-95"><Icon name="x" className="w-5 h-5 md:w-6 md:h-6" /></button>
+                        <div className="max-w-xl mx-auto w-full">
+                            <Card className="border-4 border-[#802B22] bg-white relative z-20 fade-in p-4 md:p-6">
+                                <div className="flex justify-between items-center mb-4 md:mb-5 border-b border-gray-50 pb-3">
+                                    <h3 className="font-black text-lg md:text-xl text-gray-800 flex items-center gap-2"><Icon name="coins" className="text-[#802B22] w-5 h-5"/> 누적순헌금 현황</h3>
+                                    <button onClick={() => setFinanceEditMode(false)} className="p-1.5 bg-gray-50 rounded-full text-gray-500 active:scale-95 hover:bg-gray-100"><Icon name="x" className="w-5 h-5" /></button>
                                 </div>
-                                <div className="space-y-6 md:space-y-8">
+                                <div className="space-y-5">
                                     
-                                    <div className="bg-red-50 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center sm:items-end gap-2 border border-red-100">
-                                        <span className="font-black text-[#802B22] text-sm md:text-base">총 누적합산 금액</span>
-                                        <span className="font-black text-3xl md:text-4xl text-gray-800">₩ {cumulativeTotal.toLocaleString()}</span>
+                                    <div className="bg-red-50 p-4 md:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center sm:items-end gap-2 border border-red-100 shadow-inner">
+                                        <span className="font-black text-[#802B22] text-xs md:text-sm tracking-widest uppercase">총 누적합산 금액</span>
+                                        <span className="font-black text-2xl md:text-3xl text-gray-800 tracking-tight">₩ {cumulativeTotal.toLocaleString()}</span>
                                     </div>
 
                                     <div className="w-full">
-                                        <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-2 md:mb-3">전학기 이월금</label>
+                                        <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest block mb-1.5 px-1">전학기 이월금</label>
                                         <div className="flex items-center gap-2 w-full">
-                                            <div className="flex items-center gap-2 bg-gray-50 p-2 md:p-3 rounded-xl flex-1">
-                                                <input type="number" value={carry} onChange={e => setCarry(e.target.value)} className="flex-1 min-w-0 w-full p-2 md:p-3 bg-transparent font-bold text-base md:text-lg outline-none text-right" placeholder="이월금" />
-                                                <span className="text-base md:text-lg font-bold text-gray-500 pr-2 shrink-0 whitespace-nowrap">원</span>
+                                            <div className="flex items-center gap-2 bg-gray-50 p-1.5 pl-3 rounded-xl flex-1 border border-gray-100">
+                                                <input type="number" value={carry} onChange={e => setCarry(e.target.value)} className="flex-1 min-w-0 w-full py-1 bg-transparent font-black text-sm md:text-base outline-none text-right text-gray-700" placeholder="이월금" />
+                                                <span className="text-xs md:text-sm font-bold text-gray-400 pr-2 shrink-0">원</span>
                                             </div>
-                                            <button onClick={() => { onUpdateFinanceEdits(carry, {}); alert("이월금이 저장되었습니다."); }} className="px-5 py-4 md:py-6 bg-gray-800 text-white rounded-xl font-black text-sm md:text-base active:scale-95 transition-transform shrink-0 shadow-sm hover:bg-gray-900">저장</button>
+                                            <button onClick={() => { onUpdateFinanceEdits(carry, {}); alert("이월금이 저장되었습니다."); }} className="px-4 py-2.5 md:py-3 bg-[#2C3552] text-white rounded-xl font-black text-xs md:text-sm active:scale-95 transition-transform shrink-0 shadow-sm hover:bg-[#1a2035]">저장</button>
                                         </div>
                                     </div>
 
-                                    <div className="border-t-2 border-gray-50 pt-4 md:pt-6 w-full">
-                                        <label className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest block mb-3 md:mb-4">순예배 헌금 내역</label>
-                                        <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1 md:pr-2 custom-scrollbar w-full">
-                                            {history.length === 0 && <div className="text-sm md:text-base text-gray-400 font-bold text-center py-6">기록된 헌금 내역이 없습니다.</div>}
+                                    <div className="border-t border-gray-100 pt-4 w-full">
+                                        <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest block mb-3 px-1">순예배 헌금 내역</label>
+                                        <div className="space-y-2 max-h-[30vh] overflow-y-auto pr-1 md:pr-2 custom-scrollbar w-full">
+                                            {history.length === 0 && <div className="text-xs md:text-sm text-gray-400 font-bold text-center py-6">기록된 헌금 내역이 없습니다.</div>}
                                             {history.map(h => (
-                                                <div key={h.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-100 w-full">
-                                                    <span className="text-sm md:text-base font-black text-[#802B22] shrink-0">{h.date}</span>
-                                                    <span className="text-xs md:text-sm font-bold text-gray-600 sm:text-right">
-                                                        총 헌금 ₩{(Number(h.offering)||0).toLocaleString()} / <span className="text-[#802B22]">₩{Math.floor((Number(h.offering)||0) * 0.4).toLocaleString()}</span> <span className="text-gray-400">(40%반영)</span>
-                                                    </span>
+                                                <div key={h.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100 w-full hover:bg-gray-100 transition-colors">
+                                                    <span className="text-xs md:text-sm font-black text-gray-600 shrink-0">{h.date}</span>
+                                                    <div className="flex items-center gap-2 text-right">
+                                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 hidden sm:inline">총액 ₩{(Number(h.offering)||0).toLocaleString()}</span>
+                                                        <span className="hidden sm:inline text-gray-300">|</span>
+                                                        <span className="text-sm md:text-base font-black text-[#802B22]">₩{Math.floor((Number(h.offering)||0) * 0.4).toLocaleString()} <span className="text-[9px] md:text-[10px] text-[#802B22]/60 font-bold ml-0.5">(40%)</span></span>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -561,7 +563,7 @@
                         document.body
                     )}
 
-                    {/* 비밀번호 입력 모달 (예배기록 저장/수정/삭제용) */}
+                    {/* 비밀번호 입력 모달 (네이비 톤 취소/확인 버튼 반영) */}
                     {showAuth && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[999999] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
                             <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
@@ -572,14 +574,14 @@
                                     value={authInput} 
                                     onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleAuthConfirm(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#2C3552] transition-colors`} 
                                     placeholder="••••••••" 
                                     autoFocus
                                 />
                                 {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
                                 <div className="flex gap-3 mt-6">
                                     <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleAuthConfirm} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
+                                    <button onClick={handleAuthConfirm} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">확인</button>
                                 </div>
                             </div>
                         </div>,
@@ -1051,6 +1053,7 @@
                         ))}
                     </div>
 
+                    {/* 기도제목 수정 모달 레이어 */}
                     {editingMember && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={closeEdit}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
@@ -1289,14 +1292,14 @@
                             </div>
 
                             <div className="hidden md:block w-full overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white custom-scrollbar">
-                                <table className="w-full min-w-[800px] text-base text-left whitespace-nowrap">
-                                    <thead className="bg-gray-100 text-gray-600 font-black text-sm uppercase">
+                                <table className="w-full min-w-[900px] text-base text-left">
+                                    <thead className="bg-gray-50 text-gray-500 font-black text-xs uppercase tracking-widest">
                                         <tr>
-                                            <th className="p-4 border-b border-gray-200 w-40">남편</th>
-                                            <th className="p-4 border-b border-gray-200 w-40">아내</th>
-                                            <th className="p-4 border-b border-gray-200">자녀</th>
-                                            <th className="p-4 border-b border-gray-200">차량정보</th>
-                                            {isAdmin && <th className="p-4 border-b border-gray-200 text-center w-20">관리</th>}
+                                            <th className="py-4 px-6 border-b border-gray-200 w-[22%] whitespace-nowrap">남편</th>
+                                            <th className="py-4 px-6 border-b border-gray-200 w-[22%] whitespace-nowrap">아내</th>
+                                            <th className="py-4 px-6 border-b border-gray-200 w-[25%]">자녀 정보</th>
+                                            <th className="py-4 px-6 border-b border-gray-200 w-[20%]">차량 번호</th>
+                                            {isAdmin && <th className="py-4 px-6 border-b border-gray-200 text-center w-[11%]">관리</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -1308,20 +1311,24 @@
                                             if (isAdmin && draft) {
                                                 return (
                                                     <tr key={f.id} className="bg-blue-50/10 hover:bg-blue-50/30 transition-colors">
-                                                        <td className="p-3 border-r border-gray-100">
-                                                            <input className="w-24 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] mb-1.5 font-bold" value={draft.hName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
-                                                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
-                                                            <label className="flex items-center gap-1.5 cursor-pointer mt-2"><input type="checkbox" checked={draft.hPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-600">참여</span></label>
+                                                        <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20">
+                                                            <div className="flex gap-2 w-full mb-2">
+                                                                <input className="w-3/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.hName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
+                                                                <input className="w-2/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.hRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
+                                                            </div>
+                                                            <label className="flex items-center gap-2 cursor-pointer mt-2 pl-1"><input type="checkbox" checked={draft.hPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-700">순예배 참여</span></label>
                                                         </td>
-                                                        <td className="p-3 border-r border-gray-100">
-                                                            <input className="w-24 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] mb-1.5 font-bold" value={draft.wName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
-                                                            <input className="w-20 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
-                                                            <label className="flex items-center gap-1.5 cursor-pointer mt-2"><input type="checkbox" checked={draft.wPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-600">참여</span></label>
+                                                        <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20">
+                                                            <div className="flex gap-2 w-full mb-2">
+                                                                <input className="w-3/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.wName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
+                                                                <input className="w-2/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.wRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
+                                                            </div>
+                                                            <label className="flex items-center gap-2 cursor-pointer mt-2 pl-1"><input type="checkbox" checked={draft.wPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-700">순예배 참여</span></label>
                                                         </td>
-                                                        <td className="p-3 border-r border-gray-100"><input className="w-full min-w-[150px] p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.children} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, children: e.target.value}})); setHasChanges(true);}} placeholder="자녀 정보"/></td>
-                                                        <td className="p-3 border-r border-gray-100"><input className="w-32 p-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.vehicle} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, vehicle: e.target.value}})); setHasChanges(true);}} placeholder="차량 번호"/></td>
-                                                        <td className="p-3 text-center">
-                                                            <button onClick={() => onDeleteFamily(f.id)} className="px-4 py-2 bg-red-50 text-red-600 text-xs font-black rounded-lg active:scale-95 w-full shadow-sm hover:bg-red-100 transition-colors">삭제</button>
+                                                        <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20"><input className="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.children} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, children: e.target.value}})); setHasChanges(true);}} placeholder="자녀 정보"/></td>
+                                                        <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20"><input className="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.vehicle} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, vehicle: e.target.value}})); setHasChanges(true);}} placeholder="차량 번호"/></td>
+                                                        <td className="py-4 px-6 text-center bg-blue-50/20">
+                                                            <button onClick={() => onDeleteFamily(f.id)} className="px-4 py-2.5 bg-white text-red-600 text-xs font-black rounded-xl active:scale-95 w-full shadow-sm hover:bg-red-50 transition-colors border border-red-200">삭제</button>
                                                         </td>
                                                     </tr>
                                                 );
@@ -1329,16 +1336,28 @@
 
                                             return (
                                                 <tr key={f.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className={`p-4 border-r border-gray-100 ${!husband.isParticipating ? 'opacity-40' : ''}`}>
-                                                        {husband.name ? <div className="font-black text-gray-800 text-base">{husband.name} <span className="font-bold text-gray-400 text-xs ml-1">{husband.role}</span></div> : '-'}
-                                                        {husband.name && <div className="flex items-center gap-1.5 mt-1.5"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500">{husband.isParticipating?'참여':'미참여'}</span></div>}
+                                                    <td className={`py-5 px-6 border-r border-gray-100 ${!husband.isParticipating ? 'opacity-40' : ''}`}>
+                                                        {husband.name ? (
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="font-black text-gray-800 text-lg md:text-xl whitespace-nowrap">{husband.name} <span className="font-bold text-gray-400 text-sm ml-1.5">{husband.role}</span></div>
+                                                                <div className="flex items-center gap-1.5 mt-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500 whitespace-nowrap">{husband.isParticipating?'순예배 참여':'미참여'}</span></div>
+                                                            </div>
+                                                        ) : <span className="text-gray-300 font-bold">-</span>}
                                                     </td>
-                                                    <td className={`p-4 border-r border-gray-100 ${!wife.isParticipating ? 'opacity-40' : ''}`}>
-                                                        {wife.name ? <div className="font-black text-gray-800 text-base">{wife.name} <span className="font-bold text-gray-400 text-xs ml-1">{wife.role}</span></div> : '-'}
-                                                        {wife.name && <div className="flex items-center gap-1.5 mt-1.5"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500">{wife.isParticipating?'참여':'미참여'}</span></div>}
+                                                    <td className={`py-5 px-6 border-r border-gray-100 ${!wife.isParticipating ? 'opacity-40' : ''}`}>
+                                                        {wife.name ? (
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="font-black text-gray-800 text-lg md:text-xl whitespace-nowrap">{wife.name} <span className="font-bold text-gray-400 text-sm ml-1.5">{wife.role}</span></div>
+                                                                <div className="flex items-center gap-1.5 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500 whitespace-nowrap">{wife.isParticipating?'순예배 참여':'미참여'}</span></div>
+                                                            </div>
+                                                        ) : <span className="text-gray-300 font-bold">-</span>}
                                                     </td>
-                                                    <td className="p-4 border-r border-gray-100 text-sm font-bold text-gray-600">{f.children || '-'}</td>
-                                                    <td className="p-4 border-r border-gray-100 text-sm font-black text-[#802B22]">{f.vehicle || '-'}</td>
+                                                    <td className="py-5 px-6 border-r border-gray-100">
+                                                        <span className="text-base md:text-lg font-bold text-gray-700 leading-snug break-keep">{f.children || '-'}</span>
+                                                    </td>
+                                                    <td className="py-5 px-6 border-r border-gray-100">
+                                                        <span className="text-base md:text-lg font-black text-[#802B22] break-keep">{f.vehicle || '-'}</span>
+                                                    </td>
                                                 </tr>
                                             );
                                         })}
