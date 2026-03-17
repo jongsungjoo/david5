@@ -530,8 +530,15 @@
             const [form, setForm] = useState(guideData);
             const [fullScreenImage, setFullScreenImage] = useState(null);
             const [fullScreenBible, setFullScreenBible] = useState(false);
+            
+            const [pinchDist, setPinchDist] = useState(null);
+            const [textScale, setTextScale] = useState(1);
 
             useEffect(() => { setForm(guideData); }, [guideData]);
+
+            useEffect(() => {
+                if (!fullScreenBible) setTextScale(1);
+            }, [fullScreenBible]);
 
             const handleImageUpload = async (e, slot) => {
                 const file = e.target.files[0];
@@ -542,6 +549,26 @@
             };
 
             const save = () => { onUpdateGuide(form); setIsEditing(false); alert("예배 안내가 저장되었습니다."); };
+
+            const handleTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                    const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                    setPinchDist(dist);
+                }
+            };
+
+            const handleTouchMove = (e) => {
+                if (e.touches.length === 2 && pinchDist !== null) {
+                    const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                    const scaleChange = dist / pinchDist;
+                    setTextScale(prev => Math.min(Math.max(0.5, prev * scaleChange), 5));
+                    setPinchDist(dist);
+                }
+            };
+
+            const handleTouchEnd = () => {
+                setPinchDist(null);
+            };
 
             return (
                 <div className="space-y-6 animate-slide-up pb-10">
@@ -702,15 +729,29 @@
                         document.body
                     )}
 
+                    {/* 성경봉독 모달 (핀치줌 및 글씨 크기 반영) */}
                     {fullScreenBible && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col p-6 md:p-12 fade-in overflow-y-auto custom-scrollbar" onClick={() => setFullScreenBible(false)}>
+                        <div 
+                            className="fixed inset-0 z-[99999] bg-white/95 backdrop-blur-md flex flex-col p-6 md:p-12 fade-in overflow-y-auto custom-scrollbar" 
+                            onClick={() => setFullScreenBible(false)}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                        >
                             <div className="flex justify-between items-center mb-10 shrink-0 max-w-4xl mx-auto w-full">
                                 <span className="text-[#802B22] font-black tracking-[0.2em] uppercase text-sm border-b-2 border-[#802B22] pb-1">Scripture Reading</span>
                                 <button className="p-2 text-gray-400 hover:text-[#802B22] hover:bg-red-50 rounded-full transition-colors"><Icon name="x" className="w-10 h-10" /></button>
                             </div>
-                            <div className="mb-10 max-w-4xl mx-auto w-full"><h2 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">{form.bibleVerse}</h2></div>
-                            <div className="flex-1 max-w-4xl mx-auto w-full"><p className="text-2xl md:text-3xl font-bold text-gray-800 leading-[2.2] whitespace-pre-wrap">{form.bibleContent}</p></div>
-                            <div className="mt-16 text-center text-gray-400 font-bold text-base bg-gray-50 py-4 rounded-xl max-w-4xl mx-auto w-full cursor-pointer hover:bg-gray-100 transition-colors">아무 곳이나 탭하면 화면이 닫힙니다.</div>
+                            <div className="mb-6 max-w-4xl mx-auto w-full">
+                                <h2 className="font-black text-[#802B22] leading-tight" style={{ fontSize: `calc(1.25rem * ${textScale})` }}>{form.bibleVerse}</h2>
+                            </div>
+                            <div className="flex-1 max-w-4xl mx-auto w-full">
+                                <p className="font-bold text-gray-800 leading-[2.2] whitespace-pre-wrap" style={{ fontSize: `calc(1.125rem * ${textScale})` }}>{form.bibleContent}</p>
+                            </div>
+                            <div className="mt-16 text-center text-gray-400 font-bold text-sm md:text-base bg-gray-50 py-4 rounded-xl max-w-4xl mx-auto w-full cursor-pointer hover:bg-gray-100 transition-colors">
+                                아무 곳이나 탭하면 화면이 닫힙니다.<br/>
+                                <span className="text-xs mt-1 block font-medium">(두 손가락으로 화면을 확대/축소하여 글씨 크기를 조절할 수 있습니다)</span>
+                            </div>
                         </div>,
                         document.body
                     )}
@@ -1179,6 +1220,7 @@
                         </div>
                     </div>
 
+                    {/* 흰색 반투명 모달 백그라운드 일괄 적용 (여기도 포털 안쪽이므로 정상 작동) */}
                     {showAuth && (
                         <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError('');}}>
                             <div className="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl border border-gray-100" onClick={e=>e.stopPropagation()}>
