@@ -1353,6 +1353,46 @@
                 }
             };
 
+            const handleCopyVehicles = () => {
+                let text = "[다윗5순 차량정보]\n";
+                groupedFamilies.forEach(f => {
+                    if (f.vehicle && f.vehicle.trim() !== '') {
+                        const rep = (f.husband && f.husband.name.trim() !== '') ? f.husband : ((f.wife && f.wife.name.trim() !== '') ? f.wife : null);
+                        if (rep) {
+                            const roleText = rep.role ? ` ${rep.role}님` : '님';
+                            text += `- ${rep.name}${roleText} : ${f.vehicle}\n`;
+                        }
+                    }
+                });
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('차량정보가 복사되었습니다.');
+                    }).catch(() => fallbackCopyVehicles(text));
+                } else {
+                    fallbackCopyVehicles(text);
+                }
+            };
+
+            const fallbackCopyVehicles = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('차량정보가 복사되었습니다.');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    alert('복사에 실패했습니다.');
+                }
+                document.body.removeChild(textArea);
+            };
+
             return ReactDOM.createPortal(
                 <div className="fixed inset-0 z-[150] bg-[#F3F4F6] flex flex-col animate-slide-up">
                     <header className="p-4 bg-white border-b border-gray-100 shrink-0 shadow-sm safe-top flex justify-center">
@@ -1385,6 +1425,13 @@
                                 </div>
                             )}
                             
+                            <div className="flex justify-end mb-3 px-1">
+                                <button onClick={handleCopyVehicles} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="차량정보 전체 복사">
+                                    <Icon name="copy" className="w-3.5 h-3.5 text-[#802B22]" />
+                                    차량정보 복사
+                                </button>
+                            </div>
+
                             <div className="md:hidden flex flex-col gap-4">
                                 {groupedFamilies.map(f => (
                                     <MobileDirectoryCard 
@@ -1488,14 +1535,14 @@
                                     value={authInput} 
                                     onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#2C3552] transition-colors`} 
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
                                     placeholder="••••••••" 
                                     autoFocus
                                 />
                                 {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
                                 <div className="flex gap-3 mt-6">
                                     <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleLogin} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">확인</button>
+                                    <button onClick={handleLogin} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
                                 </div>
                             </div>
                         </div>,
@@ -1512,12 +1559,12 @@
                                     value={newPwd} 
                                     onChange={e=>setNewPwd(e.target.value)} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleChangePwd(); }}
-                                    className="w-full p-4 bg-[#F3F4F6] border border-transparent rounded-2xl font-black text-center text-lg mb-6 outline-none focus:border-[#2C3552] transition-colors" 
+                                    className="w-full p-4 bg-[#F3F4F6] border border-transparent rounded-2xl font-black text-center text-lg mb-6 outline-none focus:border-[#802B22] transition-colors" 
                                     placeholder="새로운 비밀번호 입력"
                                 />
                                 <div className="flex gap-3 mt-2">
                                     <button onClick={() => setShowChangePwd(false)} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleChangePwd} className="flex-1 py-4 bg-[#2C3552] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#1a2035] transition-colors">변경 완료</button>
+                                    <button onClick={handleChangePwd} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">변경 완료</button>
                                 </div>
                             </div>
                         </div>,
