@@ -893,14 +893,18 @@
         const extractTags = (text) => {
             if (!text) return [];
             const tags = new Set();
+            
+            // #부모님 태그 우선순위 적용 (가장 먼저 추가하여 잘리지 않게 보호)
+            if (/부모|어머니|아버지|엄마|아빠|장인|장모|시어머니|시아버지|시댁|처가|친정|양가/.test(text)) tags.add('부모님');
+            
             if (/건강|치료|회복|수술|아픔|병원|항암/.test(text)) tags.add('건강/치료');
             if (/직장|취업|이직|회사|면접|승진|업무|사업|매출|계약/.test(text)) tags.add('직장/사업');
-            if (/가정|남편|아내|부부|결혼|시댁|처가/.test(text)) tags.add('가정/부부');
-            if (/자녀|아들|딸|아이|임신|출산|육아/.test(text)) tags.add('자녀');
-            if (/학업|시험|학교|대학|수능|합격|공부|진로/.test(text)) tags.add('학업/진로');
+            if (/가정|남편|아내|부부|결혼|배우자/.test(text)) tags.add('가정/부부');
+            if (/자녀|아들|딸|아이|임신|출산|육아|학업|시험|학교|대학|수능|합격|공부|진로/.test(text)) tags.add('자녀학업/진로');
             if (/관계|갈등|마음|우울|평안|위로/.test(text)) tags.add('마음/평안');
             if (/신앙|예배|말씀|교회|성령|은혜|순장|사역|기도/.test(text)) tags.add('신앙/사역');
             if (/이사|청약|집|거주/.test(text)) tags.add('이사/거주');
+            
             return Array.from(tags).slice(0, 3); 
         };
 
