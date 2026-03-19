@@ -890,19 +890,19 @@
         };
 
         // --- View 3: 순기도제목 ---
-        const extractTags = (text, member) => {
+        const extractTags = (text, member, spouseName) => {
             if (!text) return [];
             const tags = new Set();
             
             // 1. 건강 (최우선순위 1)
-            // '회복' 단어는 '예배 회복', '관계 회복' 등으로 쓰일 수 있어 제외하고 명확한 신체 건강 단어로 교체
-            if (/건강|치료|수술|아픔|병원|항암|질병|질환|입원|투병/.test(text)) tags.add('건강');
+            // '건강한 가정'이라는 표현에서는 '건강' 태그가 잡히지 않도록 예외 처리
+            const healthText = text.replace(/건강한\s*가정/g, '');
+            if (/건강|치료|수술|아픔|병원|항암|질병|질환|입원|투병/.test(healthText)) tags.add('건강');
             
             // 2. 부모님 (최우선순위 2)
             if (/부모님|어머니|어머님|아버지|아버님|장인|장모|시어머니|시아버지|시댁|처가|친정|양가/.test(text)) tags.add('부모님');
             
             // 3. 자녀 (최우선순위 3)
-            // '시험' 단어는 신앙적 '시험에 들지 않게'와 겹치므로 제거하고 구체적인 학업 단어만 유지
             if (/자녀|아들|딸|아이|임신|출산|육아|학업|학교|대학|수능|합격|공부|진로/.test(text)) tags.add('자녀');
             if (member && member.children) {
                 const childNames = member.children
@@ -916,28 +916,33 @@
                 }
             }
 
-            // 4. 교회/사역 (사역 관련 내용 우선 표시, 단어 엄격하게 필터링)
+            // 4. 부부 (신규 분리)
+            if (/부부|남편|아내|결혼|배우자/.test(text)) tags.add('부부');
+            if (spouseName && text.includes(spouseName)) tags.add('부부');
+
+            // 5. 교회/사역
             if (/사역|사명|순장|봉사|전도|선교|임원|교사|목장|다락방/.test(text)) tags.add('교회/사역');
             
-            // 5. 직장/사업
+            // 6. 직장/사업
             if (/직장|취업|이직|회사|면접|승진|업무|사업|매출|계약/.test(text)) tags.add('직장/사업');
             
-            // 6. 말씀/믿음 (태그명 변경 및 '믿음' 키워드 편입)
+            // 7. 말씀/믿음
             if (/말씀|믿음|관계|갈등|마음|우울|평안|위로/.test(text)) tags.add('말씀/믿음');
             
-            // 7. 이사/거주
+            // 8. 이사/거주
             if (/이사|청약|집|거주/.test(text)) tags.add('이사/거주');
             
-            // 8. 가정/신앙 (가장 후순위 - 다른 태그가 없거나 덜 찼을 때만 보이도록 맨 아래 배치)
-            if (/가정|남편|아내|부부|결혼|배우자|신앙|예배|교회|성령|은혜|기도/.test(text)) tags.add('가정/신앙');
+            // 9. 가정/신앙 (부부 관련 단어 분리 후 남은 단어들)
+            if (/가정|신앙|예배|교회|성령|은혜|기도/.test(text)) tags.add('가정/신앙');
             
-            return Array.from(tags).slice(0, 3); 
+            // 최대 표시 태그 개수 3개 -> 4개로 수정
+            return Array.from(tags).slice(0, 4); 
         };
 
-        const PrayerCard = ({ m, onEditClick, forceExpand }) => {
+        const PrayerCard = ({ m, spouseName, onEditClick, forceExpand }) => {
             const [isExpanded, setIsExpanded] = useState(true);
             
-            const tags = extractTags(m.prayer, m);
+            const tags = extractTags(m.prayer, m, spouseName);
 
             useEffect(() => {
                 setIsExpanded(forceExpand);
@@ -1002,6 +1007,13 @@
         const PrayerListView = ({ members, onUpdate }) => {
             const activeMembers = useMemo(() => members.filter(m => m.isParticipating && m.name.trim() !== ''), [members]);
             
+            // 배우자 이름 찾는 함수
+            const getSpouseName = (m) => {
+                if (!m || !m.familyId) return null;
+                const spouse = activeMembers.find(other => other.familyId === m.familyId && other.id !== m.id);
+                return spouse ? spouse.name : null;
+            };
+
             const [shuffledIds, setShuffledIds] = useState([]);
             useEffect(() => {
                 const ids = activeMembers.map(m => m.id);
@@ -1018,7 +1030,7 @@
 
             const allTags = useMemo(() => {
                 const tags = new Set();
-                activeMembers.forEach(m => extractTags(m.prayer, m).forEach(t => tags.add(t)));
+                activeMembers.forEach(m => extractTags(m.prayer, m, getSpouseName(m)).forEach(t => tags.add(t)));
                 return Array.from(tags);
             }, [activeMembers]);
 
@@ -1033,7 +1045,7 @@
                     return [...activeMembers].sort((a, b) => a.name.localeCompare(b.name));
                 }
                 if (!selectedTag) return displayMembers;
-                return displayMembers.filter(m => extractTags(m.prayer, m).includes(selectedTag));
+                return displayMembers.filter(m => extractTags(m.prayer, m, getSpouseName(m)).includes(selectedTag));
             }, [displayMembers, activeMembers, selectedTag]);
 
             const openEdit = (m) => {
@@ -1121,7 +1133,7 @@
                         {filteredMembers.length === 0 && <div className="text-center py-12 text-gray-400 font-bold text-base w-full block col-span-full">해당되는 순기도제목이 없습니다.</div>}
                         {filteredMembers.map(m => (
                             <div key={m.id} className="break-inside-avoid mb-6 w-full block">
-                                <PrayerCard m={m} onEditClick={openEdit} forceExpand={isAllExpanded} />
+                                <PrayerCard m={m} spouseName={getSpouseName(m)} onEditClick={openEdit} forceExpand={isAllExpanded} />
                             </div>
                         ))}
                     </div>
