@@ -929,10 +929,7 @@
             // 7. 말씀/믿음
             if (/말씀|믿음|관계|갈등|마음|우울|평안|위로/.test(text)) tags.add('말씀/믿음');
             
-            // 8. 이사/거주
-            if (/이사|청약|집|거주/.test(text)) tags.add('이사/거주');
-            
-            // 9. 가정/신앙 (부부 관련 단어 분리 후 남은 단어들)
+            // 8. 가정/신앙 (부부 관련 단어 분리 후 남은 단어들)
             if (/가정|신앙|예배|교회|성령|은혜|기도/.test(text)) tags.add('가정/신앙');
             
             // 최대 표시 태그 개수 3개 -> 4개로 수정
@@ -948,14 +945,53 @@
                 setIsExpanded(forceExpand);
             }, [forceExpand]);
 
+            const handleCopy = (e) => {
+                e.stopPropagation();
+                const text = `[${m.name}${m.role ? ' ' + m.role : ''}]\n${m.prayer || ''}`;
+                
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('개별 기도제목이 복사되었습니다.');
+                    }).catch(() => fallbackCopy(text));
+                } else {
+                    fallbackCopy(text);
+                }
+            };
+
+            const fallbackCopy = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('개별 기도제목이 복사되었습니다.');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    alert('복사에 실패했습니다.');
+                }
+                document.body.removeChild(textArea);
+            };
+
             return (
                 <Card className="p-0 transition-all overflow-hidden border border-gray-100 shadow-sm hover:shadow-md">
                     <div className="p-4 md:p-5 flex justify-between items-start cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors relative" onClick={() => setIsExpanded(!isExpanded)}>
                         <div className="flex items-center">
                             <div>
-                                <div className="flex items-baseline gap-2 mb-1.5">
-                                    <span className="text-xl md:text-2xl font-black text-gray-800">{m.name}</span>
-                                    {m.role && <span className="text-sm font-bold text-gray-400">{m.role}</span>}
+                                <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-xl md:text-2xl font-black text-gray-800">{m.name}</span>
+                                        {m.role && <span className="text-sm font-bold text-gray-400">{m.role}</span>}
+                                    </div>
+                                    {m.prayer && (
+                                        <button onClick={handleCopy} className="ml-1 p-1.5 text-gray-400 hover:text-[#802B22] hover:bg-red-50 rounded-lg transition-colors active:scale-95" title="기도제목 복사">
+                                            <Icon name="copy" className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                                 {tags.length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1.5">
