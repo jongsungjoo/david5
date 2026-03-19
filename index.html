@@ -890,7 +890,7 @@
         };
 
         // --- View 3: 순기도제목 ---
-        const extractTags = (text, member, spouseName) => {
+        const extractTags = (text, member) => {
             if (!text) return [];
             const tags = new Set();
             
@@ -916,30 +916,29 @@
                 }
             }
 
-            // 4. 부부 (신규 분리)
-            if (/부부|남편|아내|결혼|배우자/.test(text)) tags.add('부부');
-            if (spouseName && text.includes(spouseName)) tags.add('부부');
-
-            // 5. 교회/사역
+            // 4. 교회/사역
             if (/사역|사명|순장|봉사|전도|선교|임원|교사|목장|다락방/.test(text)) tags.add('교회/사역');
             
-            // 6. 직장/사업
+            // 5. 직장/사업
             if (/직장|취업|이직|회사|면접|승진|업무|사업|매출|계약/.test(text)) tags.add('직장/사업');
             
-            // 7. 말씀/믿음
+            // 6. 말씀/믿음
             if (/말씀|믿음|관계|갈등|마음|우울|평안|위로/.test(text)) tags.add('말씀/믿음');
             
-            // 8. 가정/신앙 (부부 관련 단어 분리 후 남은 단어들)
-            if (/가정|신앙|예배|교회|성령|은혜|기도/.test(text)) tags.add('가정/신앙');
+            // 7. 이사/거주
+            if (/이사|청약|집|거주/.test(text)) tags.add('이사/거주');
+            
+            // 8. 가정/신앙 (부부 관련 단어 복구 및 통합)
+            if (/가정|남편|아내|부부|결혼|배우자|신앙|예배|교회|성령|은혜|기도/.test(text)) tags.add('가정/신앙');
             
             // 최대 표시 태그 개수 3개 -> 4개로 수정
             return Array.from(tags).slice(0, 4); 
         };
 
-        const PrayerCard = ({ m, spouseName, onEditClick, forceExpand }) => {
+        const PrayerCard = ({ m, onEditClick, forceExpand }) => {
             const [isExpanded, setIsExpanded] = useState(true);
             
-            const tags = extractTags(m.prayer, m, spouseName);
+            const tags = extractTags(m.prayer, m);
 
             useEffect(() => {
                 setIsExpanded(forceExpand);
@@ -1043,13 +1042,6 @@
         const PrayerListView = ({ members, onUpdate }) => {
             const activeMembers = useMemo(() => members.filter(m => m.isParticipating && m.name.trim() !== ''), [members]);
             
-            // 배우자 이름 찾는 함수
-            const getSpouseName = (m) => {
-                if (!m || !m.familyId) return null;
-                const spouse = activeMembers.find(other => other.familyId === m.familyId && other.id !== m.id);
-                return spouse ? spouse.name : null;
-            };
-
             const [shuffledIds, setShuffledIds] = useState([]);
             useEffect(() => {
                 const ids = activeMembers.map(m => m.id);
@@ -1066,7 +1058,7 @@
 
             const allTags = useMemo(() => {
                 const tags = new Set();
-                activeMembers.forEach(m => extractTags(m.prayer, m, getSpouseName(m)).forEach(t => tags.add(t)));
+                activeMembers.forEach(m => extractTags(m.prayer, m).forEach(t => tags.add(t)));
                 return Array.from(tags);
             }, [activeMembers]);
 
@@ -1081,7 +1073,7 @@
                     return [...activeMembers].sort((a, b) => a.name.localeCompare(b.name));
                 }
                 if (!selectedTag) return displayMembers;
-                return displayMembers.filter(m => extractTags(m.prayer, m, getSpouseName(m)).includes(selectedTag));
+                return displayMembers.filter(m => extractTags(m.prayer, m).includes(selectedTag));
             }, [displayMembers, activeMembers, selectedTag]);
 
             const openEdit = (m) => {
@@ -1169,7 +1161,7 @@
                         {filteredMembers.length === 0 && <div className="text-center py-12 text-gray-400 font-bold text-base w-full block col-span-full">해당되는 순기도제목이 없습니다.</div>}
                         {filteredMembers.map(m => (
                             <div key={m.id} className="break-inside-avoid mb-6 w-full block">
-                                <PrayerCard m={m} spouseName={getSpouseName(m)} onEditClick={openEdit} forceExpand={isAllExpanded} />
+                                <PrayerCard m={m} onEditClick={openEdit} forceExpand={isAllExpanded} />
                             </div>
                         ))}
                     </div>
