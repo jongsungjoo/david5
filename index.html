@@ -890,7 +890,7 @@
         };
 
         // --- View 3: 순기도제목 ---
-        const extractTags = (text) => {
+        const extractTags = (text, member) => {
             if (!text) return [];
             const tags = new Set();
             
@@ -905,13 +905,26 @@
             if (/자녀|아들|딸|아이|임신|출산|육아|학업|시험|학교|대학|수능|합격|공부|진로/.test(text)) tags.add('자녀');
             if (/이사|청약|집|거주/.test(text)) tags.add('이사/거주');
             
+            // 가족 명단의 자녀 이름이 기도제목에 언급되었는지 체크
+            if (member && member.children) {
+                const childNames = member.children
+                    .replace(/\(.*?\)/g, '') // "소율('04)" -> "소율"
+                    .split(/[\s,]+/)         // 쉼표나 공백으로 분리
+                    .map(n => n.trim())
+                    .filter(n => n.length > 0);
+                
+                if (childNames.some(name => text.includes(name))) {
+                    tags.add('자녀');
+                }
+            }
+            
             return Array.from(tags).slice(0, 3); 
         };
 
         const PrayerCard = ({ m, onEditClick, forceExpand }) => {
             const [isExpanded, setIsExpanded] = useState(true);
             
-            const tags = extractTags(m.prayer);
+            const tags = extractTags(m.prayer, m);
 
             useEffect(() => {
                 setIsExpanded(forceExpand);
@@ -992,7 +1005,7 @@
 
             const allTags = useMemo(() => {
                 const tags = new Set();
-                activeMembers.forEach(m => extractTags(m.prayer).forEach(t => tags.add(t)));
+                activeMembers.forEach(m => extractTags(m.prayer, m).forEach(t => tags.add(t)));
                 return Array.from(tags);
             }, [activeMembers]);
 
@@ -1007,7 +1020,7 @@
                     return [...activeMembers].sort((a, b) => a.name.localeCompare(b.name));
                 }
                 if (!selectedTag) return displayMembers;
-                return displayMembers.filter(m => extractTags(m.prayer).includes(selectedTag));
+                return displayMembers.filter(m => extractTags(m.prayer, m).includes(selectedTag));
             }, [displayMembers, activeMembers, selectedTag]);
 
             const openEdit = (m) => {
