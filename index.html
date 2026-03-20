@@ -452,7 +452,7 @@
 
                     {/* 새 예배 기록 작성 모달 (공간 최적화 및 장소/헌금 순서 변경) */}
                     {showAdd && !financeEditMode && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
+                        <div className="fixed inset-0 z- bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
                                 <Card className="border-t-8 border-[#802B22] fade-in p-4 md:p-6 flex flex-col overflow-hidden w-full max-h-[85vh]">
                                     
@@ -506,7 +506,7 @@
 
                     {/* 개별 예배 기록 수정 모달 */}
                     {editingRecord && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
+                        <div className="fixed inset-0 z- bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={(e) => { if(e.target===e.currentTarget) setEditingRecord(null); }}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
                                 <Card className="border-t-8 border-[#802B22] relative p-4 md:p-6 flex flex-col overflow-hidden w-full max-h-[85vh]">
                                     
@@ -565,7 +565,7 @@
 
                     {/* 비밀번호 입력 모달 (예배기록 저장/수정/삭제용) */}
                     {showAuth && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[999999] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
+                        <div className="fixed inset-0 z- bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
                             <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
                                 <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
@@ -629,14 +629,14 @@
 
             const handleTouchStart = (e) => {
                 if (e.touches.length === 2) {
-                    const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                    const dist = Math.hypot(e.touches.pageX - e.touches.pageX, e.touches.pageY - e.touches.pageY);
                     setPinchDist(dist);
                 }
             };
 
             const handleTouchMove = (e) => {
                 if (e.touches.length === 2 && pinchDist !== null) {
-                    const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                    const dist = Math.hypot(e.touches.pageX - e.touches.pageX, e.touches.pageY - e.touches.pageY);
                     const scaleChange = dist / pinchDist;
                     setTextScale(prev => Math.min(Math.max(0.5, prev * scaleChange), 5));
                     setPinchDist(dist);
@@ -718,6 +718,33 @@
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {/* 왼쪽: 주보 스타일 예배 순서 */}
                         <div className="lg:col-span-7 bulletin-border p-6 md:p-10 rounded-xl shadow-sm">
+                            
+                            {/* 상단 배너 이미지 */}
+                            {isEditing ? (
+                                <div className="mb-8">
+                                    {form.bannerImage ? (
+                                        <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100">
+                                            <img src={form.bannerImage} className="w-full h-auto object-cover opacity-50" />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <button onClick={() => setForm({...form, bannerImage: null})} className="flex items-center gap-1.5 px-3 py-2 bg-white text-red-600 font-black text-xs rounded-xl shadow-lg active:scale-95 border border-red-100 hover:bg-red-50"><Icon name="trash-2" className="w-4 h-4"/> 배너 삭제</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <label className="flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-4 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors w-full">
+                                            <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
+                                            상단 배너 이미지 첨부 (선택)
+                                            <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'bannerImage')} />
+                                        </label>
+                                    )}
+                                </div>
+                            ) : (
+                                form.bannerImage && (
+                                    <div className="mb-8 w-full rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                                        <img src={form.bannerImage} className="w-full h-auto object-cover block" alt="주보 배너" />
+                                    </div>
+                                )
+                            )}
+
                             <h3 className="text-2xl md:text-3xl font-black text-center text-[#802B22] mb-8 tracking-[0.3em]">순예배 순서</h3>
                             
                             <div className="space-y-1">
@@ -746,31 +773,54 @@
                                     <div className="py-4 border-b border-dashed border-gray-200">
                                         <label className="font-black text-[#802B22] text-lg mb-2 block">찬 양</label>
                                         <div className="flex gap-2">
-                                            <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                                악보1 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage')} />
-                                            </label>
-                                            <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                                악보2 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage2')} />
-                                            </label>
+                                            {form.musicImage ? (
+                                                <div className="relative flex-1 rounded-xl overflow-hidden border border-gray-200 aspect-video shadow-sm bg-gray-100">
+                                                    <img src={form.musicImage} className="w-full h-full object-cover opacity-50" />
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <button onClick={() => setForm({...form, musicImage: null})} className="flex items-center gap-1.5 px-3 py-2 bg-white text-red-600 font-black text-xs rounded-xl shadow-lg active:scale-95 border border-red-100 hover:bg-red-50"><Icon name="trash-2" className="w-4 h-4"/> 첨부 삭제</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <label className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors aspect-video">
+                                                    <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
+                                                    악보1 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage')} />
+                                                </label>
+                                            )}
+                                            
+                                            {form.musicImage2 ? (
+                                                <div className="relative flex-1 rounded-xl overflow-hidden border border-gray-200 aspect-video shadow-sm bg-gray-100">
+                                                    <img src={form.musicImage2} className="w-full h-full object-cover opacity-50" />
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <button onClick={() => setForm({...form, musicImage2: null})} className="flex items-center gap-1.5 px-3 py-2 bg-white text-red-600 font-black text-xs rounded-xl shadow-lg active:scale-95 border border-red-100 hover:bg-red-50"><Icon name="trash-2" className="w-4 h-4"/> 첨부 삭제</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <label className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors aspect-video">
+                                                    <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
+                                                    악보2 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage2')} />
+                                                </label>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
                                     <div>
                                         <BulletinRow label="찬 양" align="text-right">다 함 께</BulletinRow>
-                                        <div className="pl-0 md:pl-[120px] flex gap-3 mb-4 justify-end">
-                                            {form.musicImage && (
-                                                <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.musicImage)}>
-                                                    <img src={form.musicImage} className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
-                                                </div>
-                                            )}
-                                            {form.musicImage2 && (
-                                                <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.musicImage2)}>
-                                                    <img src={form.musicImage2} className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        {(form.musicImage || form.musicImage2) && (
+                                            <div className="pl-0 md:pl-[120px] flex gap-3 mb-4 justify-end">
+                                                {form.musicImage && (
+                                                    <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.musicImage)}>
+                                                        <img src={form.musicImage} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
+                                                    </div>
+                                                )}
+                                                {form.musicImage2 && (
+                                                    <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.musicImage2)}>
+                                                        <img src={form.musicImage2} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -902,7 +952,7 @@
                     </div>
 
                     {fullScreenImage && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center fade-in cursor-pointer overflow-y-auto custom-scrollbar" onClick={() => setFullScreenImage(null)}>
+                        <div className="fixed inset-0 z- bg-white flex flex-col items-center justify-center fade-in cursor-pointer overflow-y-auto custom-scrollbar" onClick={() => setFullScreenImage(null)}>
                             <img src={fullScreenImage} className="w-full h-full object-contain block" alt="악보 크게 보기" />
                         </div>,
                         document.body
@@ -911,7 +961,7 @@
                     {/* 성경봉독 모달 (핀치줌 및 글씨 크기 반영) */}
                     {fullScreenBible && ReactDOM.createPortal(
                         <div 
-                            className="fixed inset-0 z-[99999] bg-white/95 backdrop-blur-md flex flex-col p-6 md:p-12 fade-in overflow-y-auto custom-scrollbar" 
+                            className="fixed inset-0 z- bg-white/95 backdrop-blur-md flex flex-col p-6 md:p-12 fade-in overflow-y-auto custom-scrollbar" 
                             onClick={() => setFullScreenBible(false)}
                             onTouchStart={handleTouchStart}
                             onTouchMove={handleTouchMove}
@@ -939,7 +989,7 @@
         };
 
         // --- View 3: 순기도제목 ---
-        const extractTags = (text, member) => {
+        const extractTags = (text, member, spouseName) => {
             if (!text) return [];
             const tags = new Set();
             
@@ -965,26 +1015,30 @@
                 }
             }
 
-            // 4. 교회/사역
+            // 4. 부부 (신규 분리)
+            if (/부부|남편|아내|결혼|배우자/.test(text)) tags.add('부부');
+            if (spouseName && text.includes(spouseName)) tags.add('부부');
+
+            // 5. 교회/사역
             if (/사역|사명|순장|봉사|전도|선교|임원|교사|목장|다락방/.test(text)) tags.add('교회/사역');
             
-            // 5. 직장/사업
+            // 6. 직장/사업
             if (/직장|취업|이직|회사|면접|승진|업무|사업|매출|계약/.test(text)) tags.add('직장/사업');
             
-            // 6. 말씀/믿음
+            // 7. 말씀/믿음
             if (/말씀|믿음|관계|갈등|마음|우울|평안|위로/.test(text)) tags.add('말씀/믿음');
             
-            // 7. 가정/신앙 (부부 관련 단어 복구 및 통합)
-            if (/가정|남편|아내|부부|결혼|배우자|신앙|예배|교회|성령|은혜|기도/.test(text)) tags.add('가정/신앙');
+            // 8. 가정/신앙 (부부 관련 단어 분리 후 남은 단어들)
+            if (/가정|신앙|예배|교회|성령|은혜|기도/.test(text)) tags.add('가정/신앙');
             
-            // 최대 표시 태그 개수 4개
+            // 최대 표시 태그 개수 3개 -> 4개로 수정
             return Array.from(tags).slice(0, 4); 
         };
 
-        const PrayerCard = ({ m, onEditClick, forceExpand }) => {
+        const PrayerCard = ({ m, spouseName, onEditClick, forceExpand }) => {
             const [isExpanded, setIsExpanded] = useState(true);
             
-            const tags = extractTags(m.prayer, m);
+            const tags = extractTags(m.prayer, m, spouseName);
 
             useEffect(() => {
                 setIsExpanded(forceExpand);
@@ -1067,8 +1121,8 @@
                                             if (match) {
                                                 return (
                                                     <div key={idx} className="flex gap-2 items-start">
-                                                        <span className="text-[#802B22] font-black shrink-0 leading-[1.7]">{match[1]}</span>
-                                                        <span className="text-gray-700 leading-[1.7] break-words">{match[2]}</span>
+                                                        <span className="text-[#802B22] font-black shrink-0 leading-[1.7]">{match}</span>
+                                                        <span className="text-gray-700 leading-[1.7] break-words">{match}</span>
                                                     </div>
                                                 );
                                             }
@@ -1088,6 +1142,13 @@
         const PrayerListView = ({ members, onUpdate }) => {
             const activeMembers = useMemo(() => members.filter(m => m.isParticipating && m.name.trim() !== ''), [members]);
             
+            // 배우자 이름 찾는 함수
+            const getSpouseName = (m) => {
+                if (!m || !m.familyId) return null;
+                const spouse = activeMembers.find(other => other.familyId === m.familyId && other.id !== m.id);
+                return spouse ? spouse.name : null;
+            };
+
             const [shuffledIds, setShuffledIds] = useState([]);
             useEffect(() => {
                 const ids = activeMembers.map(m => m.id);
@@ -1104,7 +1165,7 @@
 
             const allTags = useMemo(() => {
                 const tags = new Set();
-                activeMembers.forEach(m => extractTags(m.prayer, m).forEach(t => tags.add(t)));
+                activeMembers.forEach(m => extractTags(m.prayer, m, getSpouseName(m)).forEach(t => tags.add(t)));
                 return Array.from(tags);
             }, [activeMembers]);
 
@@ -1119,7 +1180,7 @@
                     return [...activeMembers].sort((a, b) => a.name.localeCompare(b.name));
                 }
                 if (!selectedTag) return displayMembers;
-                return displayMembers.filter(m => extractTags(m.prayer, m).includes(selectedTag));
+                return displayMembers.filter(m => extractTags(m.prayer, m, getSpouseName(m)).includes(selectedTag));
             }, [displayMembers, activeMembers, selectedTag]);
 
             const openEdit = (m) => {
@@ -1207,14 +1268,14 @@
                         {filteredMembers.length === 0 && <div className="text-center py-12 text-gray-400 font-bold text-base w-full block col-span-full">해당되는 순기도제목이 없습니다.</div>}
                         {filteredMembers.map(m => (
                             <div key={m.id} className="break-inside-avoid mb-6 w-full block">
-                                <PrayerCard m={m} onEditClick={openEdit} forceExpand={isAllExpanded} />
+                                <PrayerCard m={m} spouseName={getSpouseName(m)} onEditClick={openEdit} forceExpand={isAllExpanded} />
                             </div>
                         ))}
                     </div>
 
                     {/* 기도제목 수정 모달 레이어 (포털 적용 및 흰색 반투명 효과) */}
                     {editingMember && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={closeEdit}>
+                        <div className="fixed inset-0 z- bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={closeEdit}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
                                 <Card className="border-t-8 border-[#802B22] fade-in p-5 md:p-8 flex flex-col overflow-hidden w-full max-h-[85vh]">
                                     <div className="flex justify-between items-center mb-6 shrink-0">
@@ -1443,7 +1504,7 @@
             };
 
             return ReactDOM.createPortal(
-                <div className="fixed inset-0 z-[150] bg-[#F3F4F6] flex flex-col animate-slide-up">
+                <div className="fixed inset-0 z- bg-[#F3F4F6] flex flex-col animate-slide-up">
                     <header className="p-4 bg-white border-b border-gray-100 shrink-0 shadow-sm safe-top flex justify-center">
                         <div className="w-full max-w-6xl flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -1575,7 +1636,7 @@
 
                     {/* 관리자 비밀번호 모달 (일괄 적용) */}
                     {showAuth && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
+                        <div className="fixed inset-0 z- bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
                             <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
                                 <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
@@ -1600,7 +1661,7 @@
                     
                     {/* 비밀번호 변경 모달 */}
                     {showChangePwd && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
+                        <div className="fixed inset-0 z- bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
                             <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
                                 <h3 className="text-2xl font-black text-gray-800 mb-6">새 비밀번호 설정</h3>
                                 <input 
@@ -1681,7 +1742,8 @@
                 musicImage: null,
                 musicImage2: null,
                 announceImage: null,
-                announceImage2: null
+                announceImage2: null,
+                bannerImage: null
             });
 
             useEffect(() => {
