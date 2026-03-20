@@ -618,14 +618,35 @@
             }, [fullScreenBible]);
 
             const handleImageUpload = async (e, slot) => {
-                const file = e.target.files;
-                if (file) {
+                // 수정된 부분: 파일 목록(files) 중 반드시 첫 번째() 파일을 지정하도록 수정
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+                
+                const file = files;
+                try {
                     const compressed = await compressImage(file);
-                    setForm(prev => ({ ...prev, [slot]: compressed }));
+                    if (compressed) {
+                        setForm(prev => ({ ...prev, [slot]: compressed }));
+                    }
+                } catch (error) {
+                    console.error("Image upload error:", error);
+                    alert("이미지를 처리하는 중 문제가 발생했습니다.");
                 }
+                
+                // 동일한 파일을 지웠다가 다시 올릴 때 반응하도록 input 초기화
+                e.target.value = '';
             };
 
-            const save = () => { onUpdateGuide(form); setIsEditing(false); alert("순예배 주보가 저장되었습니다."); };
+            const save = async () => { 
+                try {
+                    await onUpdateGuide(form); 
+                    setIsEditing(false); 
+                    alert("순예배 주보가 저장되었습니다."); 
+                } catch (error) {
+                    console.error("Save error:", error);
+                    alert("저장에 실패했습니다. 첨부된 이미지들의 총 용량이 너무 클 수 있습니다.");
+                }
+            };
 
             const handleTouchStart = (e) => {
                 if (e.touches.length === 2) {
