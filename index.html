@@ -179,8 +179,8 @@
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         
-                        // 고해상도 배너 이미지를 위해 비율을 유지하며 최대 길이를 1200px로 제한
-                        const MAX_SIZE = 1200;
+                        // 파이어베이스 1MB 용량 제한을 피하기 위해 크기와 품질 최적화
+                        const MAX_SIZE = 800;
                         let width = img.width;
                         let height = img.height;
                         
@@ -199,8 +199,8 @@
                         canvas.width = width; 
                         canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
-                        // 품질 0.7로 압축하여 1MB 이상의 이미지도 가볍게 변환
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        // 품질 0.6으로 압축하여 가볍게 변환 (화질은 유지하고 용량은 대폭 감소)
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
                     img.onerror = () => reject(new Error('이미지 로드 실패'));
                 };
@@ -643,7 +643,8 @@
                 const files = e.target.files;
                 if (!files || files.length === 0) return;
                 
-                const file = files; // 반드시으로 첫 번째 파일을 선택해야 에러가 나지 않습니다!
+                //이 누락되어 있던 핵심 버그 수정
+                const file = files; 
                 try {
                     const compressed = await compressImage(file);
                     if (compressed) {
