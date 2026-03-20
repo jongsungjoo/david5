@@ -618,7 +618,7 @@
             }, [fullScreenBible]);
 
             const handleImageUpload = async (e, slot) => {
-                const file = e.target.files;
+                const file = e.target.files; //을 추가하여 에러 해결
                 if (file) {
                     const compressed = await compressImage(file);
                     setForm(prev => ({ ...prev, [slot]: compressed }));
@@ -718,6 +718,33 @@
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {/* 왼쪽: 주보 스타일 예배 순서 */}
                         <div className="lg:col-span-7 bulletin-border p-6 md:p-10 rounded-xl shadow-sm">
+                            
+                            {/* 상단 배너 이미지 */}
+                            {isEditing ? (
+                                <div className="mb-8">
+                                    {form.bannerImage ? (
+                                        <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100">
+                                            <img src={form.bannerImage} className="w-full h-auto object-cover opacity-50" />
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <button onClick={() => setForm({...form, bannerImage: null})} className="flex items-center gap-1.5 px-3 py-2 bg-white text-red-600 font-black text-xs rounded-xl shadow-lg active:scale-95 border border-red-100 hover:bg-red-50"><Icon name="trash-2" className="w-4 h-4"/> 배너 삭제</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <label className="flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-4 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors w-full">
+                                            <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
+                                            상단 배너 이미지 첨부 (선택)
+                                            <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'bannerImage')} />
+                                        </label>
+                                    )}
+                                </div>
+                            ) : (
+                                form.bannerImage && (
+                                    <div className="mb-8 w-full rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                                        <img src={form.bannerImage} className="w-full h-auto object-cover block" alt="주보 배너" />
+                                    </div>
+                                )
+                            )}
+
                             <h3 className="text-2xl md:text-3xl font-black text-center text-[#802B22] mb-8 tracking-[0.3em]">순예배 순서</h3>
                             
                             <div className="space-y-1">
@@ -1681,7 +1708,8 @@
                 musicImage: null,
                 musicImage2: null,
                 announceImage: null,
-                announceImage2: null
+                announceImage2: null,
+                bannerImage: null
             });
 
             useEffect(() => {
