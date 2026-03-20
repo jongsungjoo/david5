@@ -618,7 +618,7 @@
             }, [fullScreenBible]);
 
             const handleImageUpload = async (e, slot) => {
-                const file = e.target.files; //을 추가하여 에러 해결
+                const file = e.target.files; // 이 부분에 반드시이 들어가야 합니다!
                 if (file) {
                     const compressed = await compressImage(file);
                     setForm(prev => ({ ...prev, [slot]: compressed }));
