@@ -616,7 +616,21 @@
             useEffect(() => {
                 if (!fullScreenBible) setTextScale(1);
             }, [fullScreenBible]);
-
+            
+      
+            const handleImageUpload = async (e, slot) => {
+  
+        // 바로 아래 줄 files 뒤에이 들어간 것이 핵심입니다!
+   
+    const file = e.target.files; 
+    if (file) {
+        const compressed = await compressImage(file);
+        setForm(prev => ({ ...prev, [slot]: compressed }));
+    }
+};
+            
+            
+            
             const handleImageUpload = async (e, slot) => {
                 const file = e.target.files; //을 추가하여 파일 1개를 정확히 짚어주도록 수정
                 if (file) {
@@ -647,6 +661,10 @@
                 setPinchDist(null);
             };
 
+            
+            
+            
+            
             const copyToClipboard = (text) => {
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(text).then(() => {
