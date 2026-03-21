@@ -625,7 +625,7 @@
                 }
             };
 
-            const save = () => { onUpdateGuide(form); setIsEditing(false); alert("예배 안내가 저장되었습니다."); };
+            const save = () => { onUpdateGuide(form); setIsEditing(false); alert("예배 주보가 저장되었습니다."); };
 
             const handleTouchStart = (e) => {
                 if (e.touches.length === 2) {
@@ -703,17 +703,22 @@
             return (
                 <div className="space-y-6 animate-slide-up pb-10">
                     <header className="flex justify-between items-center px-1">
-                        <div><span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">Guide</span><h1 className="text-2xl font-black mt-1">순예배 안내</h1></div>
-                        {isEditing ? (
-                            <button onClick={save} className="px-5 py-2.5 rounded-xl text-sm font-black transition-all bg-[#802B22] text-white shadow-md hover:bg-[#6c231c]">
-                                저장하기
-                            </button>
-                        ) : (
-                            <button onClick={() => setIsEditing(true)} className="p-2 md:p-2.5 text-[#802B22] bg-red-50 rounded-xl active:scale-95 transition-transform flex items-center justify-center hover:bg-red-100 shadow-sm">
-                                <Icon name="edit-3" className="w-4 h-4 md:w-5 md:h-5" />
-                            </button>
-                        )}
-                    </header>
+    <div><span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">Guide</span><h1 className="text-2xl font-black mt-1">순예배주보</h1></div>
+    {isEditing ? (
+        <div className="flex gap-2">
+            <button onClick={() => { setIsEditing(false); setForm(guideData); }} className="px-4 py-2.5 rounded-xl text-sm font-black transition-all bg-gray-100 text-gray-600 shadow-sm hover:bg-gray-200">
+                취소
+            </button>
+            <button onClick={save} className="px-5 py-2.5 rounded-xl text-sm font-black transition-all bg-[#802B22] text-white shadow-md hover:bg-[#6c231c]">
+                저장하기
+            </button>
+        </div>
+    ) : (
+        <button onClick={() => setIsEditing(true)} className="p-2 md:p-2.5 text-[#802B22] bg-red-50 rounded-xl active:scale-95 transition-transform flex items-center justify-center hover:bg-red-100 shadow-sm">
+            <Icon name="edit-3" className="w-4 h-4 md:w-5 md:h-5" />
+        </button>
+    )}
+</header>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {/* 왼쪽: 주보 스타일 예배 순서 */}
