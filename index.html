@@ -843,38 +843,10 @@
                                 <h3 className="text-2xl font-black text-gray-800 tracking-widest">교회 소식</h3>
                             </div>
                             {isEditing ? (
-                                <div className="flex flex-col gap-4">
-                                    <textarea value={form.announcements || ""} onChange={e => setForm({...form, announcements: e.target.value})} placeholder="광고 및 주요 일정 내용을 입력하세요..." className="w-full h-64 bg-gray-50 p-5 rounded-2xl text-lg font-bold text-gray-800 outline-none border border-gray-200 min-h-[200px] leading-loose focus:border-[#802B22] transition-colors custom-scrollbar" />
-                                    <div className="flex gap-2">
-                                        <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                            이미지1 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage')} />
-                                        </label>
-                                        <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                            이미지2 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage2')} />
-                                        </label>
-                                    </div>
-                                </div>
+                                <textarea value={form.announcements || ""} onChange={e => setForm({...form, announcements: e.target.value})} placeholder="광고 및 주요 일정 내용을 입력하세요..." className="w-full h-64 bg-gray-50 p-5 rounded-2xl text-lg font-bold text-gray-800 outline-none border border-gray-200 min-h-[200px] leading-loose focus:border-[#802B22] transition-colors custom-scrollbar" />
                             ) : (
-                                <div className="flex flex-col gap-5">
-                                    <div className="text-lg md:text-xl text-gray-700 font-bold leading-[2.2] whitespace-pre-wrap px-2">
-                                        {renderAnnouncements(form.announcements)}
-                                    </div>
-                                    {(form.announceImage || form.announceImage2) && (
-                                        <div className="flex gap-3 px-2">
-                                            {form.announceImage && (
-                                                <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.announceImage)}>
-                                                    <img src={form.announceImage} className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
-                                                </div>
-                                            )}
-                                            {form.announceImage2 && (
-                                                <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.announceImage2)}>
-                                                    <img src={form.announceImage2} className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                <div className="text-lg md:text-xl text-gray-700 font-bold leading-[2.2] whitespace-pre-wrap px-2">
+                                    {renderAnnouncements(form.announcements)}
                                 </div>
                             )}
                         </Card>
@@ -1658,9 +1630,7 @@
                 prsBible: "마 21:12~22:46", 
                 prsLink: "https://youtube.com",
                 musicImage: null,
-                musicImage2: null,
-                announceImage: null,
-                announceImage2: null
+                musicImage2: null
             });
 
             useEffect(() => {
