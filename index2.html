@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- PWA 및 스마트폰 홈 화면 추가 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="다윗5순">
@@ -13,7 +12,6 @@
     <meta name="theme-color" content="#802B22">
     <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     
-    <!-- 카카오톡 공유용 오픈그래프(OG) 태그 -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="온유공동체 다윗 5순 매니져">
     <meta property="og:description" content="인천온누리교회 온유공동체 다윗5순의 순기도제목, 순예배 관리 시스템입니다.">
@@ -23,7 +21,6 @@
     
     <title>온유공동체 다윗 5순 매니져</title>
 
-    <!-- PWA 매니페스트 및 서비스 워커 동적 등록 -->
     <script>
         const manifest = {
             "name": "다윗5순매니져",
@@ -63,7 +60,6 @@
         }
     </script>
     
-    <!-- Scripts -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -941,20 +937,39 @@
                 setIsExpanded(forceExpand);
             }, [forceExpand]);
 
-            const handleCopy = (e) => {
+            const handleShare = async (e) => {
                 e.stopPropagation();
                 const text = `[${m.name}${m.role ? ' ' + m.role : ''}]\n${m.prayer || ''}`;
                 
+                let copied = false;
                 if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        alert('개별 기도제목이 복사되었습니다.');
-                    }).catch(() => fallbackCopy(text));
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        copied = true;
+                    } catch (err) {
+                        copied = fallbackCopy(text, false);
+                    }
                 } else {
-                    fallbackCopy(text);
+                    copied = fallbackCopy(text, false);
+                }
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: `${m.name} 기도제목`,
+                            text: text
+                        });
+                    } catch (error) {
+                        if (error.name !== 'AbortError' && copied) {
+                            alert('기도제목이 복사되었습니다. 원하는 곳에 붙여넣기 하세요.');
+                        }
+                    }
+                } else if (copied) {
+                    alert('기도제목이 복사되었습니다. 원하는 곳에 붙여넣기 하세요.');
                 }
             };
 
-            const fallbackCopy = (text) => {
+            const fallbackCopy = (text, showAlert = true) => {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
                 textArea.style.position = "fixed";
@@ -963,14 +978,16 @@
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
+                let success = false;
                 try {
-                    document.execCommand('copy');
-                    alert('개별 기도제목이 복사되었습니다.');
+                    success = document.execCommand('copy');
+                    if (showAlert && success) alert('개별 기도제목이 복사되었습니다.');
                 } catch (err) {
                     console.error('Fallback: Oops, unable to copy', err);
-                    alert('복사에 실패했습니다.');
+                    if (showAlert) alert('복사에 실패했습니다.');
                 }
                 document.body.removeChild(textArea);
+                return success;
             };
 
             return (
@@ -984,8 +1001,8 @@
                                         {m.role && <span className="text-sm font-bold text-gray-400">{m.role}</span>}
                                     </div>
                                     {m.prayer && (
-                                        <button onClick={handleCopy} className="ml-1 p-1.5 text-gray-400 hover:text-[#802B22] hover:bg-red-50 rounded-lg transition-colors active:scale-95" title="기도제목 복사">
-                                            <Icon name="copy" className="w-4 h-4" />
+                                        <button onClick={handleShare} className="ml-1 p-1.5 text-gray-400 hover:text-[#802B22] hover:bg-red-50 rounded-lg transition-colors active:scale-95" title="기도제목 복사 및 공유">
+                                            <Icon name="share-2" className="w-4 h-4" />
                                         </button>
                                     )}
                                 </div>
@@ -1088,7 +1105,7 @@
                 closeEdit();
             };
 
-            const handleShareAll = async () => {
+            const handleCopyAll = () => {
                 const prayers = activeMembers
                     .filter(m => m.prayer && m.prayer.trim() !== '')
                     .sort((a, b) => (a.order || 99) - (b.order || 99));
@@ -1098,25 +1115,6 @@
                     text += `[${m.name} ${m.role || ''}]\n${m.prayer}\n\n`;
                 });
 
-                if (navigator.share) {
-                    try {
-                        await navigator.share({
-                            title: '다윗5순 기도제목',
-                            text: text,
-                        });
-                    } catch (error) {
-                        // 사용자가 공유를 취소하거나 실패한 경우 복사로 Fallback
-                        if (error.name !== 'AbortError') {
-                            doCopy(text);
-                        }
-                    }
-                } else {
-                    // 공유 API 미지원 환경 (일부 데스크탑 등)
-                    doCopy(text);
-                }
-            };
-
-            const doCopy = (text) => {
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(text).then(() => {
                         alert('전체 기도제목이 복사되었습니다.');
@@ -1163,9 +1161,9 @@
                     </div>
 
                     <div className="flex justify-between items-center px-1">
-                        <button onClick={handleShareAll} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="전체 기도제목 공유">
-                            <Icon name="share-2" className="w-3.5 h-3.5 text-[#802B22]" />
-                            공유 (총 {activeMembers.filter(m => m.prayer).length}개)
+                        <button onClick={handleCopyAll} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="전체 복사">
+                            <Icon name="copy" className="w-3.5 h-3.5 text-[#802B22]" />
+                            총 {activeMembers.filter(m => m.prayer).length}개
                         </button>
                         <button onClick={() => setIsAllExpanded(!isAllExpanded)} className="text-sm font-black text-[#802B22] flex items-center gap-1.5 bg-red-50 px-4 py-2 rounded-xl active:scale-95 transition-transform shadow-sm hover:bg-red-100 border border-red-100">
                             <Icon name={isAllExpanded ? "chevrons-up" : "chevrons-down"} className="w-4 h-4" />
@@ -1277,7 +1275,7 @@
                                     <span className="text-xs text-gray-500 font-bold">{wife.role}</span>
                                 </div>
                             ) : <span className="text-gray-400 text-sm font-bold">-</span>}
-                            {wife.name && <div className="flex items-center gap-1 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{husband.isParticipating ? '참여' : '미참여'}</span></div>}
+                            {wife.name && <div className="flex items-center gap-1 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{wife.isParticipating ? '참여' : '미참여'}</span></div>}
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
