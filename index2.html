@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- PWA 및 스마트폰 홈 화면 추가 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="다윗5순">
@@ -12,6 +13,7 @@
     <meta name="theme-color" content="#802B22">
     <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     
+    <!-- 카카오톡 공유용 오픈그래프(OG) 태그 -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="온유공동체 다윗 5순 매니져">
     <meta property="og:description" content="인천온누리교회 온유공동체 다윗5순의 순기도제목, 순예배 관리 시스템입니다.">
@@ -21,6 +23,7 @@
     
     <title>온유공동체 다윗 5순 매니져</title>
 
+    <!-- PWA 매니페스트 및 서비스 워커 동적 등록 -->
     <script>
         const manifest = {
             "name": "다윗5순매니져",
@@ -60,6 +63,7 @@
         }
     </script>
     
+    <!-- Scripts -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -606,6 +610,8 @@
             
             const [pinchDist, setPinchDist] = useState(null);
             const [textScale, setTextScale] = useState(1);
+            
+            const [uploadingSlot, setUploadingSlot] = useState(null); // 상태 추가
 
             useEffect(() => { setForm(guideData); }, [guideData]);
 
@@ -614,41 +620,33 @@
             }, [fullScreenBible]);
 
             const handleImageUpload = async (e, slot) => {
-                const file = e.target.files;
-                if (file) {
+                const fileList = e.target.files;
+                if (fileList && fileList.length > 0) {
+                    const file = fileList;
+                    setUploadingSlot(slot);
+                    
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    formData.append('key', '3eb61775e25c039859e4f8433f82b0a6');
+
                     try {
-                        // 1. 이미지를 압축하여 준비합니다 (기존 기능 활용)
-                        const compressedDataUrl = await compressImage(file);
-                        
-                        // 2. Base64 데이터에서 순수 이미지 데이터 부분만 분리합니다
-                        const base64Data = compressedDataUrl.split(',');
-
-                        // 3. 발급받으신 ImgBB API 키 적용 완료
-                        const IMGBB_API_KEY = "3eb61775e25c039859e4f8433f82b0a6"; 
-                        
-                        // 4. ImgBB 서버로 전송할 데이터 꾸러미 만들기
-                        const formData = new FormData();
-                        formData.append('image', base64Data);
-
-                        // 5. ImgBB 서버로 업로드 요청 보내기
-                        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                        const response = await fetch('https://api.imgbb.com/1/upload', {
                             method: 'POST',
                             body: formData
                         });
-
-                        const result = await response.json();
-
-                        // 6. 업로드 성공 시, 짧은 이미지 주소(URL)를 폼에 저장
-                        if (result.success) {
-                            const imageUrl = result.data.url;
-                            setForm(prev => ({ ...prev, [slot]: imageUrl }));
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            setForm(prev => ({ ...prev, [slot]: data.data.url }));
                         } else {
-                            console.error("ImgBB 업로드 실패:", result);
-                            alert("이미지 업로드에 실패했습니다.");
+                            alert('이미지 업로드에 실패했습니다: ' + (data.error?.message || '알 수 없는 오류'));
                         }
                     } catch (error) {
-                        console.error("업로드 중 에러 발생:", error);
-                        alert("업로드 중 오류가 발생했습니다.");
+                        console.error('Upload error:', error);
+                        alert('이미지 업로드 중 네트워크 오류가 발생했습니다.');
+                    } finally {
+                        setUploadingSlot(null);
+                        e.target.value = ''; // 재업로드를 위해 초기화
                     }
                 }
             };
@@ -774,11 +772,11 @@
                                     <div className="py-4 border-b border-dashed border-gray-200">
                                         <label className="font-black text-[#802B22] text-lg mb-2 block">찬 양</label>
                                         <div className="flex gap-2">
-                                            <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                                악보1 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage')} />
+                                            <label className={`flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm ${uploadingSlot ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-blue-100'} text-center border-2 border-dashed border-blue-200 transition-colors`}>
+                                                {uploadingSlot === 'musicImage' ? '업로드 중...' : '악보1 첨부'} <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage')} disabled={!!uploadingSlot} />
                                             </label>
-                                            <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                                악보2 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage2')} />
+                                            <label className={`flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm ${uploadingSlot ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-blue-100'} text-center border-2 border-dashed border-blue-200 transition-colors`}>
+                                                {uploadingSlot === 'musicImage2' ? '업로드 중...' : '악보2 첨부'} <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'musicImage2')} disabled={!!uploadingSlot} />
                                             </label>
                                         </div>
                                     </div>
@@ -882,9 +880,9 @@
                                                 </div>
                                             </div>
                                         ) : (
-                                            <label className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors aspect-video">
-                                                <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
-                                                이미지1 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage')} />
+                                            <label className={`flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm ${uploadingSlot ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-blue-100'} text-center border-2 border-dashed border-blue-200 transition-colors aspect-video`}>
+                                                <Icon name={uploadingSlot === 'announceImage' ? "loader-2" : "image"} className={`w-5 h-5 mb-1 opacity-70 ${uploadingSlot === 'announceImage' ? 'animate-spin' : ''}`} />
+                                                {uploadingSlot === 'announceImage' ? '업로드 중...' : '이미지1 첨부'} <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage')} disabled={!!uploadingSlot} />
                                             </label>
                                         )}
                                         
@@ -896,9 +894,9 @@
                                                 </div>
                                             </div>
                                         ) : (
-                                            <label className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors aspect-video">
-                                                <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
-                                                이미지2 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage2')} />
+                                            <label className={`flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm ${uploadingSlot ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-blue-100'} text-center border-2 border-dashed border-blue-200 transition-colors aspect-video`}>
+                                                <Icon name={uploadingSlot === 'announceImage2' ? "loader-2" : "image"} className={`w-5 h-5 mb-1 opacity-70 ${uploadingSlot === 'announceImage2' ? 'animate-spin' : ''}`} />
+                                                {uploadingSlot === 'announceImage2' ? '업로드 중...' : '이미지2 첨부'} <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage2')} disabled={!!uploadingSlot} />
                                             </label>
                                         )}
                                     </div>
