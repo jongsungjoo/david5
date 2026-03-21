@@ -592,6 +592,88 @@
         };
 
         // --- View 2: 예배안내 (Worship Guide) ---
+        const FullScreenImageViewer = ({ src, onClose }) => {
+            const [imgScale, setImgScale] = useState(1);
+            const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
+            const pinchRef = useRef(null);
+            const lastPosRef = useRef(null);
+
+            const getDistance = (touches) =>
+                Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
+
+            const handleTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                    pinchRef.current = { dist: getDistance(e.touches), scale: imgScale };
+                } else if (e.touches.length === 1 && imgScale > 1) {
+                    lastPosRef.current = { x: e.touches[0].pageX - imgPos.x, y: e.touches[0].pageY - imgPos.y };
+                }
+            };
+
+            const handleTouchMove = (e) => {
+                e.preventDefault();
+                if (e.touches.length === 2 && pinchRef.current) {
+                    const newDist = getDistance(e.touches);
+                    const newScale = Math.min(Math.max(1, pinchRef.current.scale * (newDist / pinchRef.current.dist)), 5);
+                    setImgScale(newScale);
+                    if (newScale === 1) setImgPos({ x: 0, y: 0 });
+                } else if (e.touches.length === 1 && imgScale > 1 && lastPosRef.current) {
+                    setImgPos({ x: e.touches[0].pageX - lastPosRef.current.x, y: e.touches[0].pageY - lastPosRef.current.y });
+                }
+            };
+
+            const handleTouchEnd = (e) => {
+                if (e.touches.length < 2) pinchRef.current = null;
+                if (e.touches.length === 0) lastPosRef.current = null;
+                if (imgScale <= 1) { setImgScale(1); setImgPos({ x: 0, y: 0 }); }
+            };
+
+            return (
+                <div
+                    className="fixed inset-0 z-[99999] bg-black flex items-center justify-center fade-in overflow-hidden"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onClick={imgScale === 1 ? onClose : undefined}
+                    style={{ touchAction: 'none' }}
+                >
+                    <img
+                        src={src}
+                        alt="크게 보기"
+                        draggable={false}
+                        style={{
+                            transform: `scale(${imgScale}) translate(${imgPos.x / imgScale}px, ${imgPos.y / imgScale}px)`,
+                            transformOrigin: 'center center',
+                            transition: pinchRef.current ? 'none' : 'transform 0.15s ease-out',
+                            maxWidth: '100vw',
+                            maxHeight: '100vh',
+                            objectFit: 'contain',
+                            userSelect: 'none',
+                            display: 'block',
+                        }}
+                    />
+                    <div className="absolute top-5 right-5 flex gap-2">
+                        <a
+                            href={src}
+                            download
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white/30 transition-colors"
+                            title="이미지 다운로드"
+                        ><Icon name="download" className="w-5 h-5" /></a>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onClose(); }}
+                            className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-black hover:bg-white/30 transition-colors"
+                        >✕</button>
+                    </div>
+                    {imgScale > 1 && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setImgScale(1); setImgPos({ x: 0, y: 0 }); }}
+                            className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-sm text-white text-xs font-black px-4 py-2 rounded-full hover:bg-white/30 transition-colors"
+                        >원래 크기로</button>
+                    )}
+                </div>
+            );
+        };
+
         const BulletinRow = ({ label, children, align = "text-left" }) => (
             <div className="flex items-baseline justify-between py-3 md:py-4 group">
                 <span className="font-black text-[#802B22] text-lg md:text-xl tracking-[0.2em] shrink-0 whitespace-nowrap">{label}</span>
@@ -667,6 +749,17 @@
             };
 
             const save = () => { onUpdateGuide(form); setIsEditing(false); alert("예배 주보가 저장되었습니다."); };
+
+            const handleDeleteAdImage = async (slot) => {
+                const deleteSlot = slot + 'DeleteUrl';
+                const deleteUrl = form[deleteSlot];
+                if (deleteUrl) {
+                    try { await fetch(deleteUrl, { method: 'GET', mode: 'no-cors' }); } catch(_) {}
+                }
+                const updated = { ...form, [slot]: '', [deleteSlot]: '' };
+                setForm(updated);
+                await onUpdateGuide(updated); // 즉시 Firestore 저장
+            };
 
             const handleTouchStart = (e) => {
                 if (e.touches.length === 2) {
@@ -761,6 +854,36 @@
     )}
 </header>
 
+                    {/* 교회 배너 */}
+                    {isEditing ? (
+                        <div className="w-full">
+                            <label className={`flex flex-col items-center justify-center w-full h-28 rounded-2xl border-2 border-dashed transition-colors cursor-pointer gap-2 ${uploadingSlot === 'bannerImage' ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait' : 'bg-purple-50 text-purple-500 border-purple-200 hover:bg-purple-100'}`}>
+                                {uploadingSlot === 'bannerImage' ? (
+                                    <span className="flex items-center gap-2 font-black text-sm">
+                                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                        업로드 중...
+                                    </span>
+                                ) : (
+                                    <>
+                                        <Icon name="image" className="w-7 h-7" />
+                                        <span className="font-black text-sm">{form.bannerImage ? '교회 배너 변경' : '교회 배너 첨부'}</span>
+                                        <span className="text-xs font-medium opacity-60">연간 1회 교체용 · 가로형 이미지 권장</span>
+                                    </>
+                                )}
+                                <input type="file" hidden accept="image/*" disabled={!!uploadingSlot} onChange={(e) => handleImageUpload(e, 'bannerImage')} />
+                            </label>
+                            {form.bannerImage && (
+                                <img src={form.bannerImage} className="mt-2 w-full rounded-xl object-cover max-h-28 border border-gray-200" />
+                            )}
+                        </div>
+                    ) : (
+                        form.bannerImage && (
+                            <div className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                                <img src={form.bannerImage} className="w-full object-cover" alt="교회 배너" />
+                            </div>
+                        )
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {/* 왼쪽: 주보 스타일 예배 순서 */}
                         <div className="lg:col-span-7 bulletin-border p-6 md:p-10 rounded-xl shadow-sm">
@@ -814,8 +937,8 @@
                                         {/* 미리보기 */}
                                         {(form.musicImage || form.musicImage2) && (
                                             <div className="flex gap-2 mt-2">
-                                                {form.musicImage && <img src={form.musicImage} className="w-1/2 aspect-video object-cover rounded-lg border border-gray-200" />}
-                                                {form.musicImage2 && <img src={form.musicImage2} className="w-1/2 aspect-video object-cover rounded-lg border border-gray-200" />}
+                                                {form.musicImage && <img src={form.musicImage} className="w-1/2 aspect-video object-contain bg-gray-50 rounded-lg border border-gray-200" />}
+                                                {form.musicImage2 && <img src={form.musicImage2} className="w-1/2 aspect-video object-contain bg-gray-50 rounded-lg border border-gray-200" />}
                                             </div>
                                         )}
                                     </div>
@@ -824,14 +947,14 @@
                                         <BulletinRow label="찬 양" align="text-right">다 함 께</BulletinRow>
                                         <div className="pl-0 md:pl-[120px] flex gap-3 mb-4 justify-end">
                                             {form.musicImage && (
-                                                <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.musicImage)}>
-                                                    <img src={form.musicImage} className="w-full h-full object-cover" />
+                                                <div className="relative group rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-gray-50 cursor-zoom-in hover:opacity-90 transition-opacity flex items-center justify-center overflow-hidden" onClick={() => setFullScreenImage(form.musicImage)}>
+                                                    <img src={form.musicImage} className="w-full h-full object-contain" />
                                                     <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
                                                 </div>
                                             )}
                                             {form.musicImage2 && (
-                                                <div className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-white cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setFullScreenImage(form.musicImage2)}>
-                                                    <img src={form.musicImage2} className="w-full h-full object-cover" />
+                                                <div className="relative group rounded-xl border border-gray-200 shadow-sm w-1/2 aspect-video bg-gray-50 cursor-zoom-in hover:opacity-90 transition-opacity flex items-center justify-center overflow-hidden" onClick={() => setFullScreenImage(form.musicImage2)}>
+                                                    <img src={form.musicImage2} className="w-full h-full object-contain" />
                                                     <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-8 h-8" /></div>
                                                 </div>
                                             )}
@@ -908,19 +1031,92 @@
                                 <h3 className="text-2xl font-black text-gray-800 tracking-widest">교회 소식</h3>
                             </div>
                             {isEditing ? (
-                                <textarea value={form.announcements || ""} onChange={e => setForm({...form, announcements: e.target.value})} placeholder="광고 및 주요 일정 내용을 입력하세요..." className="w-full h-64 bg-gray-50 p-5 rounded-2xl text-lg font-bold text-gray-800 outline-none border border-gray-200 min-h-[200px] leading-loose focus:border-[#802B22] transition-colors custom-scrollbar" />
+                                <>
+                                    <textarea value={form.announcements || ""} onChange={e => setForm({...form, announcements: e.target.value})} placeholder="광고 및 주요 일정 내용을 입력하세요..." className="w-full h-64 bg-gray-50 p-5 rounded-2xl text-lg font-bold text-gray-800 outline-none border border-gray-200 min-h-[200px] leading-loose focus:border-[#802B22] transition-colors custom-scrollbar" />
+                                    {/* 광고 이미지 편집 */}
+                                    <div className="mt-4 pt-4 border-t border-dashed border-gray-200">
+                                        <label className="font-black text-[#802B22] text-sm mb-2 block tracking-widest uppercase">광고 이미지</label>
+                                        <div className="flex gap-2">
+                                            {/* 광고이미지1 */}
+                                            <div className="flex-1 flex flex-col gap-1.5">
+                                                {form.adImage ? (
+                                                    <div className="relative rounded-xl overflow-hidden border border-gray-200 aspect-video bg-gray-50 flex items-center justify-center">
+                                                        <img src={form.adImage} className="w-full h-full object-contain" />
+                                                        <button onClick={() => handleDeleteAdImage('adImage')} className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black hover:bg-red-600 transition-colors">✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <label className={`flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed transition-colors ${uploadingSlot === 'adImage' ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait' : 'bg-orange-50 text-orange-400 border-orange-200 hover:bg-orange-100 cursor-pointer'}`}>
+                                                        {uploadingSlot === 'adImage' ? (
+                                                            <span className="flex items-center gap-1 font-black text-xs">
+                                                                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                                                업로드 중...
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <Icon name="image-plus" className="w-6 h-6 mb-1" />
+                                                                <span className="font-black text-xs">광고1 첨부</span>
+                                                            </>
+                                                        )}
+                                                        <input type="file" hidden accept="image/*" disabled={!!uploadingSlot} onChange={(e) => handleImageUpload(e, 'adImage')} />
+                                                    </label>
+                                                )}
+                                            </div>
+                                            {/* 광고이미지2 */}
+                                            <div className="flex-1 flex flex-col gap-1.5">
+                                                {form.adImage2 ? (
+                                                    <div className="relative rounded-xl overflow-hidden border border-gray-200 aspect-video bg-gray-50 flex items-center justify-center">
+                                                        <img src={form.adImage2} className="w-full h-full object-contain" />
+                                                        <button onClick={() => handleDeleteAdImage('adImage2')} className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black hover:bg-red-600 transition-colors">✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <label className={`flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed transition-colors ${uploadingSlot === 'adImage2' ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait' : 'bg-orange-50 text-orange-400 border-orange-200 hover:bg-orange-100 cursor-pointer'}`}>
+                                                        {uploadingSlot === 'adImage2' ? (
+                                                            <span className="flex items-center gap-1 font-black text-xs">
+                                                                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                                                업로드 중...
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <Icon name="image-plus" className="w-6 h-6 mb-1" />
+                                                                <span className="font-black text-xs">광고2 첨부</span>
+                                                            </>
+                                                        )}
+                                                        <input type="file" hidden accept="image/*" disabled={!!uploadingSlot} onChange={(e) => handleImageUpload(e, 'adImage2')} />
+                                                    </label>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
                             ) : (
-                                <div className="text-lg md:text-xl text-gray-700 font-bold leading-[2.2] whitespace-pre-wrap px-2">
-                                    {renderAnnouncements(form.announcements)}
-                                </div>
+                                <>
+                                    <div className="text-lg md:text-xl text-gray-700 font-bold leading-[2.2] whitespace-pre-wrap px-2">
+                                        {renderAnnouncements(form.announcements)}
+                                    </div>
+                                    {/* 광고 이미지 일반모드 썸네일 */}
+                                    {(form.adImage || form.adImage2) && (
+                                        <div className="flex gap-3 mt-5 pt-4 border-t border-gray-100">
+                                            {form.adImage && (
+                                                <div className="relative group flex-1 rounded-xl border border-gray-200 shadow-sm aspect-video bg-gray-50 cursor-zoom-in hover:opacity-90 transition-opacity flex items-center justify-center overflow-hidden" onClick={() => setFullScreenImage(form.adImage)}>
+                                                    <img src={form.adImage} className="w-full h-full object-contain" />
+                                                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-7 h-7" /></div>
+                                                </div>
+                                            )}
+                                            {form.adImage2 && (
+                                                <div className="relative group flex-1 rounded-xl border border-gray-200 shadow-sm aspect-video bg-gray-50 cursor-zoom-in hover:opacity-90 transition-opacity flex items-center justify-center overflow-hidden" onClick={() => setFullScreenImage(form.adImage2)}>
+                                                    <img src={form.adImage2} className="w-full h-full object-contain" />
+                                                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Icon name="maximize" className="text-white w-7 h-7" /></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </Card>
                     </div>
 
                     {fullScreenImage && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center fade-in cursor-pointer overflow-y-auto custom-scrollbar" onClick={() => setFullScreenImage(null)}>
-                            <img src={fullScreenImage} className="w-full h-full object-contain block" alt="악보 크게 보기" />
-                        </div>,
+                        <FullScreenImageViewer src={fullScreenImage} onClose={() => setFullScreenImage(null)} />,
                         document.body
                     )}
 
@@ -1858,7 +2054,7 @@
 
             const tabs = [
                 { id: 'prayer', icon: 'users', label: '순기도제목' },
-                { id: 'guide', icon: 'book-open', label: '순예배안내' },
+                { id: 'guide', icon: 'book-open', label: '순예배주보' },
                 { id: 'history', icon: 'calendar-days', label: '순예배기록' }
             ];
             const activeIndex = tabs.findIndex(t => t.id === view);
