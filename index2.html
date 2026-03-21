@@ -618,6 +618,7 @@
             }, [fullScreenBible]);
 
             const handleImageUpload = async (e, slot) => {
+    // 수정 1:을 추가하여 정확한 파일 객체를 가져옵니다.
     const file = e.target.files;
     if (!file) return;
 
@@ -631,7 +632,8 @@
     try {
         // 1. 이미지 용량 최적화를 위해 먼저 압축 진행
         const compressedBase64 = await compressImage(file);
-        // 압축된 데이터에서 헤더(data:image/jpeg;base64,) 부분을 제거하고 순수 base64 데이터만 추출
+        
+        // 수정 2: split(',') 을 추가하여 순수 base64 텍스트만 추출합니다.
         const base64Data = compressedBase64.split(',');
 
         // 2. ImgBB 서버로 전송
