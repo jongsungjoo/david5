@@ -1088,7 +1088,7 @@
                 closeEdit();
             };
 
-            const handleCopyAll = () => {
+            const handleShareAll = async () => {
                 const prayers = activeMembers
                     .filter(m => m.prayer && m.prayer.trim() !== '')
                     .sort((a, b) => (a.order || 99) - (b.order || 99));
@@ -1098,16 +1098,35 @@
                     text += `[${m.name} ${m.role || ''}]\n${m.prayer}\n\n`;
                 });
 
+                let copySuccess = false;
                 if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        alert('전체 기도제목이 복사되었습니다.');
-                    }).catch(() => fallbackCopy(text));
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        copySuccess = true;
+                    } catch (e) {
+                        copySuccess = fallbackCopy(text, true); // 두 번째 인자 true는 복사 완료 alert를 숨기기 위함
+                    }
                 } else {
-                    fallbackCopy(text);
+                    copySuccess = fallbackCopy(text, true);
+                }
+
+                if (navigator.share) {
+                    try {
+                        // title 속성을 제거하여 공유 시 불필요한 "다윗5순 기도제목 -" 중복 방지
+                        await navigator.share({
+                            text: text
+                        });
+                    } catch (error) {
+                        console.log('공유 취소 또는 에러', error);
+                        // 사용자가 공유를 취소하더라도 클립보드에는 복사되었음을 알림
+                        if(copySuccess) alert('전체 기도제목이 복사되었습니다.');
+                    }
+                } else {
+                    if(copySuccess) alert('전체 기도제목이 복사되었습니다.\n(현재 브라우저는 공유하기 기능을 지원하지 않아 복사만 진행되었습니다)');
                 }
             };
 
-            const fallbackCopy = (text) => {
+            const fallbackCopy = (text, silent = false) => {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
                 textArea.style.position = "fixed";
@@ -1116,14 +1135,17 @@
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
+                let success = false;
                 try {
                     document.execCommand('copy');
-                    alert('전체 기도제목이 복사되었습니다.');
+                    success = true;
+                    if(!silent) alert('전체 기도제목이 복사되었습니다.');
                 } catch (err) {
                     console.error('Fallback: Oops, unable to copy', err);
-                    alert('복사에 실패했습니다.');
+                    if(!silent) alert('복사에 실패했습니다.');
                 }
                 document.body.removeChild(textArea);
+                return success;
             };
 
             return (
@@ -1144,9 +1166,9 @@
                     </div>
 
                     <div className="flex justify-between items-center px-1">
-                        <button onClick={handleCopyAll} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="전체 복사">
-                            <Icon name="copy" className="w-3.5 h-3.5 text-[#802B22]" />
-                            총 {activeMembers.filter(m => m.prayer).length}개
+                        <button onClick={handleShareAll} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="공유하기">
+                            <Icon name="share-2" className="w-3.5 h-3.5 text-[#802B22]" />
+                            공유 ({activeMembers.filter(m => m.prayer).length})
                         </button>
                         <button onClick={() => setIsAllExpanded(!isAllExpanded)} className="text-sm font-black text-[#802B22] flex items-center gap-1.5 bg-red-50 px-4 py-2 rounded-xl active:scale-95 transition-transform shadow-sm hover:bg-red-100 border border-red-100">
                             <Icon name={isAllExpanded ? "chevrons-up" : "chevrons-down"} className="w-4 h-4" />
