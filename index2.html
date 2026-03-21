@@ -618,14 +618,14 @@
             }, [fullScreenBible]);
 
             const handleImageUpload = async (e, slot) => {
-                const file = e.target.files[0];
+                const file = e.target.files;
                 if (file) {
                     const compressed = await compressImage(file);
                     setForm(prev => ({ ...prev, [slot]: compressed }));
                 }
             };
 
-            const save = () => { onUpdateGuide(form); setIsEditing(false); alert("예배 안내가 저장되었습니다."); };
+            const save = () => { onUpdateGuide(form); setIsEditing(false); alert("순예배 주보가 저장되었습니다."); };
 
             const handleTouchStart = (e) => {
                 if (e.touches.length === 2) {
@@ -703,7 +703,7 @@
             return (
                 <div className="space-y-6 animate-slide-up pb-10">
                     <header className="flex justify-between items-center px-1">
-                        <div><span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">Guide</span><h1 className="text-2xl font-black mt-1">순예배 안내</h1></div>
+                        <div><span className="text-[#802B22] font-black text-[10px] tracking-widest uppercase">Guide</span><h1 className="text-2xl font-black mt-1">순예배 주보</h1></div>
                         {isEditing ? (
                             <button onClick={save} className="px-5 py-2.5 rounded-xl text-sm font-black transition-all bg-[#802B22] text-white shadow-md hover:bg-[#6c231c]">
                                 저장하기
@@ -846,12 +846,33 @@
                                 <div className="flex flex-col gap-4">
                                     <textarea value={form.announcements || ""} onChange={e => setForm({...form, announcements: e.target.value})} placeholder="광고 및 주요 일정 내용을 입력하세요..." className="w-full h-64 bg-gray-50 p-5 rounded-2xl text-lg font-bold text-gray-800 outline-none border border-gray-200 min-h-[200px] leading-loose focus:border-[#802B22] transition-colors custom-scrollbar" />
                                     <div className="flex gap-2">
-                                        <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                            이미지1 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage')} />
-                                        </label>
-                                        <label className="flex-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors">
-                                            이미지2 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage2')} />
-                                        </label>
+                                        {form.announceImage ? (
+                                            <div className="relative flex-1 rounded-xl overflow-hidden border border-gray-200 aspect-video shadow-sm bg-gray-100">
+                                                <img src={form.announceImage} className="w-full h-full object-cover opacity-50" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <button onClick={() => setForm({...form, announceImage: null})} className="flex items-center gap-1.5 px-3 py-2 bg-white text-red-600 font-black text-xs rounded-xl shadow-lg active:scale-95 border border-red-100 hover:bg-red-50"><Icon name="trash-2" className="w-4 h-4"/> 첨부 삭제</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors aspect-video">
+                                                <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
+                                                이미지1 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage')} />
+                                            </label>
+                                        )}
+                                        
+                                        {form.announceImage2 ? (
+                                            <div className="relative flex-1 rounded-xl overflow-hidden border border-gray-200 aspect-video shadow-sm bg-gray-100">
+                                                <img src={form.announceImage2} className="w-full h-full object-cover opacity-50" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <button onClick={() => setForm({...form, announceImage2: null})} className="flex items-center gap-1.5 px-3 py-2 bg-white text-red-600 font-black text-xs rounded-xl shadow-lg active:scale-95 border border-red-100 hover:bg-red-50"><Icon name="trash-2" className="w-4 h-4"/> 첨부 삭제</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-600 p-3 rounded-xl font-black text-sm cursor-pointer text-center border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors aspect-video">
+                                                <Icon name="image" className="w-5 h-5 mb-1 opacity-70" />
+                                                이미지2 첨부 <input type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'announceImage2')} />
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -1801,7 +1822,7 @@
 
             const tabs = [
                 { id: 'prayer', icon: 'users', label: '순기도제목' },
-                { id: 'guide', icon: 'book-open', label: '순예배안내' },
+                { id: 'guide', icon: 'book-open', label: '순예배주보' },
                 { id: 'history', icon: 'calendar-days', label: '순예배기록' }
             ];
             const activeIndex = tabs.findIndex(t => t.id === view);
