@@ -1007,19 +1007,19 @@
                         <div className="px-3.5 pb-5 pt-4 md:px-5 border-t border-gray-50 bg-gray-50/30">
                             <div className="relative fade-in">
                                 {m.prayer ? (
-                                    <div className="text-[15px] md:text-base font-bold flex flex-col gap-3 w-full">
+                                    <div className="text-[15px] md:text-base font-bold flex flex-col gap-3">
                                         {m.prayer.split('\n').map((line, idx) => {
-                                            if (!line.trim()) return <div key={idx} className="h-1 w-full"></div>;
+                                            if (!line.trim()) return <div key={idx} className="h-1"></div>;
                                             const match = line.trim().match(/^(\d+[\.\)])\s*(.*)/);
                                             if (match) {
                                                 return (
-                                                    <div key={idx} className="flex gap-2 items-start w-full">
+                                                    <div key={idx} className="flex gap-2 items-start">
                                                         <span className="text-[#802B22] font-black shrink-0 leading-[1.7]">{match}</span>
-                                                        <span className="text-gray-700 leading-[1.7] break-words flex-1 min-w-0">{match}</span>
+                                                        <span className="text-gray-700 leading-[1.7] break-words">{match}</span>
                                                     </div>
                                                 );
                                             }
-                                            return <div key={idx} className="text-gray-700 leading-[1.7] break-words w-full">{line}</div>;
+                                            return <div key={idx} className="text-gray-700 leading-[1.7] break-words">{line}</div>;
                                         })}
                                     </div>
                                 ) : (
@@ -1084,7 +1084,7 @@
                 closeEdit();
             };
 
-            const handleCopyAndShareAll = async () => {
+            const handleShareAll = async () => {
                 const prayers = activeMembers
                     .filter(m => m.prayer && m.prayer.trim() !== '')
                     .sort((a, b) => (a.order || 99) - (b.order || 99));
@@ -1108,12 +1108,12 @@
 
                 if (navigator.share) {
                     try {
+                        // 제목(title) 필드를 제거하여 불필요한 중복 제목 입력을 방지합니다.
                         await navigator.share({
-                            // title 속성을 제거하여 공유 시 불필요한 "다윗5순 기도제목 -" 중복 방지
                             text: text
                         });
                     } catch (error) {
-                        console.log('공유 취소 또는 에러', error);
+                        console.log('공유 에러 또는 취소', error);
                         if(copySuccess) alert('전체 기도제목이 복사되었습니다.');
                     }
                 } else {
@@ -1161,7 +1161,7 @@
                     </div>
 
                     <div className="flex justify-between items-center px-1">
-                        <button onClick={handleCopyAndShareAll} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="복사 후 공유하기">
+                        <button onClick={handleShareAll} className="flex items-center gap-1.5 text-[12px] font-black text-gray-500 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50 active:scale-95 transition-transform" title="공유하기">
                             <Icon name="share-2" className="w-3.5 h-3.5 text-[#802B22]" />
                             공유 ({activeMembers.filter(m => m.prayer).length})
                         </button>
@@ -1662,7 +1662,7 @@
                                 { familyId: "f1", name: "한동균", role: "안수집사", gender: "M", children: "소율('04) 채율('07)", vehicle: "", prayer: "1. 가정에서 말씀과 기도로 바로서는 가장으로 본이 될수 있도록\n2. 주님이 허락하신 직장에서 복음전도의 목적과 사명을 이루어 가도록\n3. 교회에서 맡겨진 사역에 열정과 순종함으로 나아갈 수 있도록", isParticipating: true, order: 1 },
                                 { familyId: "f1", name: "조은미", role: "안수집사", gender: "F", children: "소율('04) 채율('07)", vehicle: "", prayer: "1. 소율이와 채율이가 어떠한 순간에도 주님을 예배할 수 있기를 기도드립니다.\n2. 졸업 후의 진로를 고민하고 기도하는 소율이를 주님이 원하시는 길로 인도하시길 기도드립니다.(취업, 대학원 등)\n3. 고 3인 채율이의 학업과 대학을 위해 기도드립니다.\n4. 사업장을 축복해주시고, 최선을 다하지만 결과를 맡길 수 있는 믿음, 허락해 주시길 기도드립니다.\n5. 인생의 후반에 주님께서 주실 비전을 기대하며 기도합니다.", isParticipating: true, order: 2 },
                                 { familyId: "f2", name: "주종성", role: "순장", gender: "M", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 온가족 주님 안에 거하고 다윗5순 모든 순식구들에게 뜨거운 믿음 충만주시길 기도합니다.\n2. 교회에서 맡겨진 사역을 성실히 감당하고 주님께서 주신 자리에 합당한 삶을 살아가길 기도합니다.\n3. 회사 프로젝트와 부서장 업무를 잘 감당하고 믿지 않는 동료들에게 복음을 전하는 축복의 통로가 되길 기도합니다.\n4. 시언, 이언 두 형제가 서로 사랑하고 우애있게 성장하길 기도합니다.\n5. 양가 부모님 건강주시고 배우자를 더욱 깊이 사랑하게 해주시길 기도합니다.", isParticipating: true, order: 3 },
-                                { familyId: "f2", name: "안지훈", role: "순모", gender: "F", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 하나님 앞에 올바로 설 수 있는 가정이 되길 기도합니다.\n2. 하나님과 친밀한 관계를 맺으며 하나님의 말씀을 묵상하는 자가 되길 기도합니다.\n3. 두 아이들에 대한 조급한 마음과 걱정을 내려놓고 하나님의 뜻이 무엇인지를 구하는 자가 되길 기도합니다.\n4. 두 아이들이 믿음 가운데 성장하여 하나님 깊이 알아가며 예배하는자로 성장하길 기도합니다.", isParticipating: true, order: 4 },
+                                { familyId: "f2", name: "안지훈", role: "순모", gender: "F", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 하나님 앞에 올바로 설 수 있는 가정이 되길 기도합니다.\n2. 하나님과 친밀한 관계를 맺으며 하나님의 말씀을 묵상하는 자가 되길 기도합니다.\n3. 두 아이들에 대한 조급한 마음과 걱정을 내려놓고 하나님의 뜻이 무엇인지를 구하는 자가 되길 기도합니다.\n4. 두 아이들이 믿음 가운데 성장하여 하나님을 깊이 알아가며 예배하는자로 성장하길 기도합니다.", isParticipating: true, order: 4 },
                                 { familyId: "f3", name: "조성민", role: "부순장", gender: "M", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 어머니, 장인/장모님의 정신적 육체적 건강\n2. 아내의 정신적 육체적 건강\n3. 고등학생이 된 큰아들과 중학생이 된 신입생으로서의 생활에 잘 적응하고 성장하는 과정에서 부모로서의 세속적 욕심을 내려놓고 하나님의 자녀로서 건강한 자아가 완성되는 과정을 든든히 후원할수 있는 부모가 될수 있기를.\n4. 제조업을 운영하는 대표로서 순간 순간의 결정이 이익만을 좇는 것이아니라 하나님의 뜻을 구하고 그 뜻에 따를수 있기를.\n5. 교회 공동체 안에서 역할에 대한 고민을 시작하고 준비할수 있도록 기도하는 시간", isParticipating: true, order: 5 },
                                 { familyId: "f3", name: "최윤정", role: "집사", gender: "F", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 식구들 모두 온전하고 바르게 하나님 사람으로 설 수 있도록\n2. 올해 결혼한지 20년인데 그 시간만큼 잘 지내왔는지 부부가 함께 돌아보는 기회를 가지길 & 앞으로도 건강한 가정을 이루는데 함께 힘쓰길\n3. 윤성이와 정민이가 예배공동체에 잘 참여해서 감사 그곳에서 믿음과 인생의 멘토를 만나길", isParticipating: true, order: 6 },
                                 { familyId: "f4", name: "최성섭", role: "성도", gender: "M", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님께서 인정하시는 믿음의 가정이 되도록.\n2. 윤호가 하나님께서 주시는 비전을 가슴에 품고 열심히 공부하고 생활하도록\n3. 슬기가 예배를 회복하고 친구들과의 관계도 원만하길.\n4. 지호가 예수님의 성품을 닮아가며 조급해하지 않도록", isParticipating: true, order: 7 },
