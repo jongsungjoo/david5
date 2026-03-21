@@ -1034,9 +1034,81 @@
                     </div>
 
                     {fullScreenImage && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center fade-in cursor-pointer overflow-y-auto custom-scrollbar" onClick={() => setFullScreenImage(null)}>
-                            <img src={fullScreenImage} className="w-full h-full object-contain block" alt="악보 크게 보기" />
-                        </div>,
+                        (() => {
+                            const [imgScale, setImgScale] = React.useState(1);
+                            const [imgPos, setImgPos] = React.useState({ x: 0, y: 0 });
+                            const pinchRef = React.useRef(null);
+                            const lastPosRef = React.useRef(null);
+
+                            const getDistance = (touches) =>
+                                Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
+
+                            const handleTouchStart = (e) => {
+                                if (e.touches.length === 2) {
+                                    pinchRef.current = { dist: getDistance(e.touches), scale: imgScale };
+                                } else if (e.touches.length === 1 && imgScale > 1) {
+                                    lastPosRef.current = { x: e.touches[0].pageX - imgPos.x, y: e.touches[0].pageY - imgPos.y };
+                                }
+                            };
+
+                            const handleTouchMove = (e) => {
+                                e.preventDefault();
+                                if (e.touches.length === 2 && pinchRef.current) {
+                                    const newDist = getDistance(e.touches);
+                                    const newScale = Math.min(Math.max(1, pinchRef.current.scale * (newDist / pinchRef.current.dist)), 5);
+                                    setImgScale(newScale);
+                                    if (newScale === 1) setImgPos({ x: 0, y: 0 });
+                                } else if (e.touches.length === 1 && imgScale > 1 && lastPosRef.current) {
+                                    setImgPos({ x: e.touches[0].pageX - lastPosRef.current.x, y: e.touches[0].pageY - lastPosRef.current.y });
+                                }
+                            };
+
+                            const handleTouchEnd = (e) => {
+                                if (e.touches.length < 2) pinchRef.current = null;
+                                if (e.touches.length < 1) lastPosRef.current = null;
+                                if (imgScale <= 1) { setImgScale(1); setImgPos({ x: 0, y: 0 }); }
+                            };
+
+                            const handleClose = () => { setFullScreenImage(null); setImgScale(1); setImgPos({ x: 0, y: 0 }); };
+
+                            return (
+                                <div
+                                    className="fixed inset-0 z-[99999] bg-black flex items-center justify-center fade-in overflow-hidden"
+                                    onTouchStart={handleTouchStart}
+                                    onTouchMove={handleTouchMove}
+                                    onTouchEnd={handleTouchEnd}
+                                    onClick={imgScale === 1 ? handleClose : undefined}
+                                >
+                                    <img
+                                        src={fullScreenImage}
+                                        alt="크게 보기"
+                                        draggable={false}
+                                        style={{
+                                            transform: `scale(${imgScale}) translate(${imgPos.x / imgScale}px, ${imgPos.y / imgScale}px)`,
+                                            transformOrigin: 'center center',
+                                            transition: pinchRef.current ? 'none' : 'transform 0.15s ease-out',
+                                            maxWidth: '100vw',
+                                            maxHeight: '100vh',
+                                            objectFit: 'contain',
+                                            userSelect: 'none',
+                                            touchAction: 'none',
+                                        }}
+                                    />
+                                    {/* 닫기 버튼 */}
+                                    <button
+                                        onClick={handleClose}
+                                        className="absolute top-5 right-5 bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-black hover:bg-white/30 transition-colors"
+                                    >✕</button>
+                                    {/* 줌 리셋 (확대 상태일 때만) */}
+                                    {imgScale > 1 && (
+                                        <button
+                                            onClick={() => { setImgScale(1); setImgPos({ x: 0, y: 0 }); }}
+                                            className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-sm text-white text-xs font-black px-4 py-2 rounded-full hover:bg-white/30 transition-colors"
+                                        >원래 크기로</button>
+                                    )}
+                                </div>
+                            );
+                        })(),
                         document.body
                     )}
 
@@ -1974,7 +2046,7 @@
 
             const tabs = [
                 { id: 'prayer', icon: 'users', label: '순기도제목' },
-                { id: 'guide', icon: 'book-open', label: '순예배안내' },
+                { id: 'guide', icon: 'book-open', label: '순예배주보' },
                 { id: 'history', icon: 'calendar-days', label: '순예배기록' }
             ];
             const activeIndex = tabs.findIndex(t => t.id === view);
