@@ -7,40 +7,40 @@
     <!-- PWA 및 스마트폰 홈 화면 추가 설정 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="다윗1순">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/jongsungjoo/david/refs/heads/main/icon1.png">
+    <meta name="apple-mobile-web-app-title" content="다윗5순">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#802B22">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david/refs/heads/main/icon1.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png">
     
     <!-- 카카오톡 공유용 오픈그래프(OG) 태그 -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="온유공동체 다윗 1순 매니져">
-    <meta property="og:description" content="인천온누리교회 온유공동체 다윗1순의 순기도제목, 순예배 관리 시스템입니다.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/jongsungjoo/david/refs/heads/main/icon1.png">
+    <meta property="og:title" content="온유공동체 다윗 5순 매니져">
+    <meta property="og:description" content="인천온누리교회 온유공동체 다윗5순의 순기도제목, 순예배 관리 시스템입니다.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon.png">
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="800">
     
-    <title>온유공동체 다윗 1순 매니져</title>
+    <title>온유공동체 다윗 5순 매니져</title>
 
     <!-- PWA 매니페스트 및 서비스 워커 동적 등록 -->
     <script>
         const manifest = {
-            "name": "다윗1순매니져",
-            "short_name": "다윗1순매니져",
+            "name": "다윗5순매니져",
+            "short_name": "다윗5순매니져",
             "start_url": ".",
             "display": "standalone",
             "background_color": "#F3F4F6",
             "theme_color": "#802B22",
             "icons": [
                 {
-                    "src": "https://raw.githubusercontent.com/jongsungjoo/david/refs/heads/main/icon1.png",
+                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png",
                     "sizes": "192x192",
                     "type": "image/png",
                     "purpose": "any maskable"
                 },
                 {
-                    "src": "https://raw.githubusercontent.com/jongsungjoo/david/refs/heads/main/icon1.png",
+                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png",
                     "sizes": "512x512",
                     "type": "image/png",
                     "purpose": "any maskable"
@@ -141,7 +141,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-1soon-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'david-5soon-v28';
 
         window.FB_SDK = { auth, db, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, query, getDoc, updateDoc, signInAnonymously, onAuthStateChanged, appId };
         window.dispatchEvent(new Event('firebase-ready'));
@@ -233,7 +233,7 @@
                     if (m.isParticipating && m.name.trim() !== '' && m.birthday && m.birthday.trim() && m.name) {
                         const key = m.birthday.trim(); // MM-DD format
                         const existing = map.get(key) || [];
-                        map.set(key, [...existing, m.name]);
+                        map.set(key, [...existing, { name: m.name, role: m.role || '' }]);
                     }
                 });
                 return map;
@@ -376,9 +376,9 @@
                                                             {record.type || '순예배'}
                                                         </div>
                                                     )}
-                                                    {bdayNames && bdayNames.map((name, idx) => (
-                                                        <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] bg-pink-100 text-pink-500 break-keep">
-                                                            {name}
+                                                    {bdayNames && bdayNames.map((person, idx) => (
+                                                        <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.3] bg-pink-100 text-pink-500 break-keep">
+                                                            {person.name}{person.role && <span className="block text-[7px] sm:text-[8px] font-bold opacity-80">{person.role}</span>}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -677,7 +677,7 @@
             </div>
         );
 
-        const WorshipGuideView = ({ guideData, onUpdateGuide, sharedBannerUrl = null }) => {
+        const WorshipGuideView = ({ guideData, onUpdateGuide }) => {
             const [isEditing, setIsEditing] = useState(false);
             const [form, setForm] = useState(guideData);
             const [fullScreenImage, setFullScreenImage] = useState(null);
@@ -848,46 +848,34 @@
 </header>
 
                     {/* 교회 배너 */}
-                    {(() => {
-                        const bannerSrc = sharedBannerUrl || form.bannerImage;
-                        if (sharedBannerUrl !== null) {
-                            // 1~4순: 5순 배너 읽기 전용 표시
-                            return bannerSrc ? (
-                                <div className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                                    <img src={bannerSrc} className="w-full object-cover" alt="교회 배너" />
-                                </div>
-                            ) : null;
-                        }
-                        // 5순: 편집 가능
-                        return isEditing ? (
-                            <div className="w-full">
-                                <label className={`flex flex-col items-center justify-center w-full h-28 rounded-2xl border-2 border-dashed transition-colors cursor-pointer gap-2 ${uploadingSlot === 'bannerImage' ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait' : 'bg-purple-50 text-purple-500 border-purple-200 hover:bg-purple-100'}`}>
-                                    {uploadingSlot === 'bannerImage' ? (
-                                        <span className="flex items-center gap-2 font-black text-sm">
-                                            <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                            업로드 중...
-                                        </span>
-                                    ) : (
-                                        <>
-                                            <Icon name="image" className="w-7 h-7" />
-                                            <span className="font-black text-sm">{form.bannerImage ? '교회 배너 변경' : '교회 배너 첨부'}</span>
-                                            <span className="text-xs font-medium opacity-60">연간 1회 교체용 · 가로형 이미지 권장</span>
-                                        </>
-                                    )}
-                                    <input type="file" hidden accept="image/*" disabled={!!uploadingSlot} onChange={(e) => handleImageUpload(e, 'bannerImage')} />
-                                </label>
-                                {form.bannerImage && (
-                                    <img src={form.bannerImage} className="mt-2 w-full rounded-xl object-cover max-h-28 border border-gray-200" />
+                    {isEditing ? (
+                        <div className="w-full">
+                            <label className={`flex flex-col items-center justify-center w-full h-28 rounded-2xl border-2 border-dashed transition-colors cursor-pointer gap-2 ${uploadingSlot === 'bannerImage' ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait' : 'bg-purple-50 text-purple-500 border-purple-200 hover:bg-purple-100'}`}>
+                                {uploadingSlot === 'bannerImage' ? (
+                                    <span className="flex items-center gap-2 font-black text-sm">
+                                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                        업로드 중...
+                                    </span>
+                                ) : (
+                                    <>
+                                        <Icon name="image" className="w-7 h-7" />
+                                        <span className="font-black text-sm">{form.bannerImage ? '교회 배너 변경' : '교회 배너 첨부'}</span>
+                                        <span className="text-xs font-medium opacity-60">연간 1회 교체용 · 가로형 이미지 권장</span>
+                                    </>
                                 )}
+                                <input type="file" hidden accept="image/*" disabled={!!uploadingSlot} onChange={(e) => handleImageUpload(e, 'bannerImage')} />
+                            </label>
+                            {form.bannerImage && (
+                                <img src={form.bannerImage} className="mt-2 w-full rounded-xl object-cover max-h-28 border border-gray-200" />
+                            )}
+                        </div>
+                    ) : (
+                        form.bannerImage && (
+                            <div className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                                <img src={form.bannerImage} className="w-full object-cover" alt="교회 배너" />
                             </div>
-                        ) : (
-                            form.bannerImage && (
-                                <div className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                                    <img src={form.bannerImage} className="w-full object-cover" alt="교회 배너" />
-                                </div>
-                            )
-                        );
-                    })()}
+                        )
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {/* 왼쪽: 주보 스타일 예배 순서 */}
@@ -1359,7 +1347,7 @@
                     .filter(m => m.prayer && m.prayer.trim() !== '')
                     .sort((a, b) => (a.order || 99) - (b.order || 99));
 
-                let text = "★다윗1순 기도제목★\n\n";
+                let text = "★다윗5순 기도제목★\n\n";
                 prayers.forEach(m => {
                     text += `[${m.name} ${m.role || ''}]\n${m.prayer}\n\n`;
                 });
@@ -1378,7 +1366,7 @@
 
                 if (navigator.share) {
                     try {
-                        // title 속성을 제거하여 공유 시 불필요한 "다윗1순 기도제목 -" 중복 방지
+                        // title 속성을 제거하여 공유 시 불필요한 "다윗5순 기도제목 -" 중복 방지
                         await navigator.share({
                             text: text
                         });
@@ -1513,7 +1501,7 @@
                         <div className="bg-white p-3 rounded-lg border border-blue-100 flex flex-col gap-2">
                             <div className="w-full">
                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">자녀정보</span>
-                                <input className="w-full p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] min-w-0 font-bold" value={draft.children} onChange={e=>onChange({...draft, children: e.target.value})} placeholder="자녀 (예: 시언('08) 이언('10))" />
+                                <input className="w-full p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] min-w-0 font-bold" value={draft.children} onChange={e=>onChange({...draft, children: e.target.value})} placeholder="자녀 (예: 소율('04) 채율('07))" />
                             </div>
                             <div className="w-full">
                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">차량정보</span>
@@ -1641,7 +1629,7 @@
             };
 
             const handleCopyVehicles = () => {
-                let text = "[다윗1순 차량정보]\n";
+                let text = "[다윗5순 차량정보]\n";
                 groupedFamilies.forEach(f => {
                     if (f.vehicle && f.vehicle.trim() !== '') {
                         const rep = (f.husband && f.husband.name.trim() !== '') ? f.husband : ((f.wife && f.wife.name.trim() !== '') ? f.wife : null);
@@ -1910,7 +1898,6 @@
             }, []);
             // ----------------------------------
             
-            const [sharedBannerUrl, setSharedBannerUrl] = useState(null);
             const [guideData, setGuideData] = useState({ 
                 prayerLeader: "순장", 
                 closingPrayerLeader: "한동균 집사님",
@@ -1933,8 +1920,23 @@
                         let list = s.docs.map(d => ({ id: d.id, ...d.data() }));
                         if (list.length === 0) {
                             const sampleMembers = [
-                                // 다윗1순 순원 없음
-                                                        ];
+                                { familyId: "f1", name: "한동균", role: "안수집사", gender: "M", children: "소율('04) 채율('07)", vehicle: "", prayer: "1. 가정에서 말씀과 기도로 바로서는 가장으로 본이 될수 있도록\n2. 주님이 허락하신 직장에서 복음전도의 목적과 사명을 이루어 가도록\n3. 교회에서 맡겨진 사역에 열정과 순종함으로 나아갈 수 있도록", isParticipating: true, order: 1 },
+                                { familyId: "f1", name: "조은미", role: "안수집사", gender: "F", children: "소율('04) 채율('07)", vehicle: "", prayer: "1. 소율이와 채율이가 어떠한 순간에도 주님을 예배할 수 있기를 기도드립니다.\n2. 졸업 후의 진로를 고민하고 기도하는 소율이를 주님이 원하시는 길로 인도하시길 기도드립니다.(취업, 대학원 등)\n3. 고 3인 채율이의 학업과 대학을 위해 기도드립니다.\n4. 사업장을 축복해주시고, 최선을 다하지만 결과를 맡길 수 있는 믿음, 허락해 주시길 기도드립니다.\n5. 인생의 후반에 주님께서 주실 비전을 기대하며 기도합니다.", isParticipating: true, order: 2 },
+                                { familyId: "f2", name: "주종성", role: "순장", gender: "M", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 온가족 주님 안에 거하고 다윗5순 모든 순식구들에게 뜨거운 믿음 충만주시길 기도합니다.\n2. 교회에서 맡겨진 사역을 성실히 감당하고 주님께서 주신 자리에 합당한 삶을 살아가길 기도합니다.\n3. 회사 프로젝트와 부서장 업무를 잘 감당하고 믿지 않는 동료들에게 복음을 전하는 축복의 통로가 되길 기도합니다.\n4. 시언, 이언 두 형제가 서로 사랑하고 우애있게 성장하길 기도합니다.\n5. 양가 부모님 건강주시고 배우자를 더욱 깊이 사랑하게 해주시길 기도합니다.", isParticipating: true, order: 3 },
+                                { familyId: "f2", name: "안지훈", role: "순모", gender: "F", children: "시언('08) 이언('10)", vehicle: "", prayer: "1. 하나님 앞에 올바로 설 수 있는 가정이 되길 기도합니다.\n2. 하나님과 친밀한 관계를 맺으며 하나님의 말씀을 묵상하는 자가 되길 기도합니다.\n3. 두 아이들에 대한 조급한 마음과 걱정을 내려놓고 하나님의 뜻이 무엇인지를 구하는 자가 되길 기도합니다.\n4. 두 아이들이 믿음 가운데 성장하여 하나님을 깊이 알아가며 예배하는자로 성장하길 기도합니다.", isParticipating: true, order: 4 },
+                                { familyId: "f3", name: "조성민", role: "부순장", gender: "M", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 어머니, 장인/장모님의 정신적 육체적 건강\n2. 아내의 정신적 육체적 건강\n3. 고등학생이 된 큰아들과 중학생이 된 신입생으로서의 생활에 잘 적응하고 성장하는 과정에서 부모로서의 세속적 욕심을 내려놓고 하나님의 자녀로서 건강한 자아가 완성되는 과정을 든든히 후원할수 있는 부모가 될수 있기를.\n4. 제조업을 운영하는 대표로서 순간 순간의 결정이 이익만을 좇는 것이아니라 하나님의 뜻을 구하고 그 뜻에 따를수 있기를.\n5. 교회 공동체 안에서 역할에 대한 고민을 시작하고 준비할수 있도록 기도하는 시간", isParticipating: true, order: 5 },
+                                { familyId: "f3", name: "최윤정", role: "집사", gender: "F", children: "윤성('09) 정민('12)", vehicle: "", prayer: "1. 식구들 모두 온전하고 바르게 하나님 사람으로 설 수 있도록\n2. 올해 결혼한지 20년인데 그 시간만큼 잘 지내왔는지 부부가 함께 돌아보는 기회를 가지길 & 앞으로도 건강한 가정을 이루는데 함께 힘쓰길\n3. 윤성이와 정민이가 예배공동체에 잘 참여해서 감사 그곳에서 믿음과 인생의 멘토를 만나길", isParticipating: true, order: 6 },
+                                { familyId: "f4", name: "최성섭", role: "성도", gender: "M", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님께서 인정하시는 믿음의 가정이 되도록.\n2. 윤호가 하나님께서 주시는 비전을 가슴에 품고 열심히 공부하고 생활하도록\n3. 슬기가 예배를 회복하고 친구들과의 관계도 원만하길.\n4. 지호가 예수님의 성품을 닮아가며 조급해하지 않도록", isParticipating: true, order: 7 },
+                                { familyId: "f4", name: "황현선", role: "권찰", gender: "F", children: "윤호('09) 슬기('11) 지호('14)", vehicle: "", prayer: "1. 하나님의 뜻을 구하며, 일상의 삶 속에서 동행하심을 느낄 수 있도록", isParticipating: true, order: 8 },
+                                { familyId: "f5", name: "곽경태", role: "집사", gender: "M", children: "찬영('16) 예찬('16)", vehicle: "", prayer: "1. 그리스도로 하나되는 가정 이루게 하여주시고 제가 더 남편으로써 부모로써 주님을 사랑하고 따르도록 인도하여 주시고 내가 하는 모든일에 항상 감사하고 살 수 있도록 인도하여주세요.\n2. 물질로 감사할때 주변을 돌볼수있는 여유를 더해 주시고 크리스찬으로서 선한영향력을 펼칠수있는자 되기를 기도합니다.\n3. 주를 더 알기 소망하며 가까이 갈 수 있도록 인도하여주시고 아이들과 크리스찬다운 삶을 살 수 있도록 기도합니다.", isParticipating: true, order: 9 },
+                                { familyId: "f5", name: "신경아", role: "성도", gender: "F", children: "찬영('16) 예찬('16)", vehicle: "", prayer: "1. 남편과 아이들이 주님 안에서 믿음으로 바로 설 수 있도록\n2. 새로운 사업장이 잘 자리잡고 안정될 수 있도록 기도합니다.", isParticipating: true, order: 10 },
+                                { familyId: "f6", name: "이희용", role: "집사", gender: "M", children: "성욱('15)", vehicle: "", prayer: "1. 가정에 평안과 감사가 넘치기를 기도합니다.", isParticipating: true, order: 11 },
+                                { familyId: "f6", name: "김희승", role: "집사", gender: "F", children: "성욱('15)", vehicle: "", prayer: "1. 주께서 부르신 이 공동체에 잘 정착하길 기도 합니다.\n2. 주께서 주신 귀한 선물 사랑하는 아들 성욱이가 온전히 주님만 바라보고 주님 품 안에서 건강하게 성장하며, 열방에 큰 쓰임을 받길 기도합니다.\n3. 주님, 기도 제목을 나눌수 있게 해주셔서 감사합니다.", isParticipating: true, order: 12 },
+                                { familyId: "f7", name: "김재학", role: "집사", gender: "M", children: "하은('16)", vehicle: "", prayer: "1. 영육간의 강건함을 주시기를\n2. 직장에서의 관계와 업무가 순탄하게 진행되기를 기도합니다.", isParticipating: true, order: 13 },
+                                { familyId: "f7", name: "안나경", role: "집사", gender: "F", children: "하은('16)", vehicle: "", prayer: "1. 하은이가 하나님을 깊이 만나고 믿음으로 자라길 기도합니다.", isParticipating: true, order: 14 },
+                                { familyId: "f8", name: "김유환", role: "성도", gender: "M", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 아내 임진주성도 주님께 마음이 열리고 예배자리로 나올수 있도록\n2. 아이들 몸과 마음이 주님 안에서 건강하게 잘 자라도록", isParticipating: true, order: 15 },
+                                { familyId: "f8", name: "임진주", role: "성도", gender: "F", children: "도윤('15) 하윤('20)", vehicle: "", prayer: "1. 하나님을 알아가는 기쁨을 누릴 수 있도록 기도합니다.", isParticipating: false, order: 16 }
+                            ];
                             sampleMembers.forEach(m => {
                                 window.FB_SDK.addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'members'), m);
                             });
@@ -1948,11 +1950,6 @@
 
                     onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'guide'), s => {
                         if (s.exists()) setGuideData(s.data());
-                    });
-
-                    // 다윗5순 배너 이미지 공유 구독
-                    onSnapshot(doc(db, 'artifacts', 'david-5soon-v28', 'public', 'data', 'settings', 'guide'), s => {
-                        if (s.exists()) setSharedBannerUrl(s.data().bannerImage || null);
                     });
 
                     onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'finance'), s => {
@@ -2068,7 +2065,7 @@
                     <div className={`bg-white border-b border-gray-100 shadow-sm z-40 flex justify-center w-full fixed top-0 transition-transform duration-300 ease-in-out ${showNav ? 'translate-y-0' : '-translate-y-full'}`}>
                         <div className="w-full max-w-6xl flex items-center gap-3 p-4 md:p-5">
                             <img src="https://raw.githubusercontent.com/jongsungjoo/grace/refs/heads/main/logo.png" className="w-9 h-9 object-contain rounded-xl" alt="logo" />
-                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800 flex-1">온유공동체 다윗 1순 매니져</h2>
+                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800 flex-1">온유공동체 다윗 5순 매니져</h2>
                             {isGlobalAdmin && (
                                 <button onClick={logoutAdmin} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-[#802B22] text-xs font-black rounded-xl active:scale-95 hover:bg-red-100 transition-colors shadow-sm">
                                     <Icon name="lock" className="w-3.5 h-3.5" />
@@ -2107,7 +2104,7 @@
                     <div className="main-content flex-1 w-full flex justify-center pt-[74px] md:pt-[80px] pb-[100px] bg-[#F3F4F6]">
                         <div className="w-full max-w-6xl p-4 md:p-6">
                             {view === 'prayer' && <PrayerListView members={members} onUpdate={handleUpdatePrayer} />}
-                            {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} sharedBannerUrl={sharedBannerUrl} />}
+                            {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} />}
                             {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} isGlobalAdmin={isGlobalAdmin} onRequestAdmin={requestAdmin} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
                         </div>
                     </div>
