@@ -234,7 +234,7 @@
             const birthdayMap = useMemo(() => {
                 const map = new Map();
                 members.forEach(m => {
-                    if (m.birthday && m.birthday.trim() && m.name) {
+                    if (m.isParticipating && m.name.trim() !== '' && m.birthday && m.birthday.trim() && m.name) {
                         const key = m.birthday.trim(); // MM-DD format
                         const existing = map.get(key) || [];
                         map.set(key, [...existing, m.name]);
@@ -379,8 +379,11 @@
                                             const mmdd = `${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
                                             const bdayNames = birthdayMap.get(mmdd);
                                             return (
-                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500' : 'text-gray-400'}`}>
-                                                    <span className="text-sm md:text-lg">{day.getDate()}</span>
+                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500 hover:bg-pink-50' : 'text-gray-400'}`}>
+                                                    <span className="text-sm md:text-lg leading-none flex items-center gap-0.5">
+                                                        {day.getDate()}
+                                                        {bdayNames && <span className="text-[9px] md:text-[11px] leading-none">🎂</span>}
+                                                    </span>
                                                     {record && (
                                                         <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
@@ -393,8 +396,8 @@
                                                         </div>
                                                     )}
                                                     {bdayNames && (
-                                                        <div className="text-[7px] sm:text-[8px] font-black text-pink-400 leading-[1.2] text-center w-full px-0.5 mt-0.5 break-keep whitespace-nowrap overflow-hidden text-ellipsis">
-                                                            🎂{bdayNames.map(n => n[0]).join('·')}
+                                                        <div className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 w-[95%] mx-auto text-center block leading-[1.2] bg-pink-100 text-pink-500 break-keep">
+                                                            {bdayNames.map(n => n[0]).join('·')}
                                                         </div>
                                                     )}
                                                 </div>
