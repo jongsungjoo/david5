@@ -93,8 +93,9 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
         @media (min-width: 768px) { .calendar-grid { gap: 4px; } }
         
-        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.2s; position: relative; gap: 2px; min-width: 0; overflow: hidden; }
-        @media (min-width: 768px) { .calendar-day { border-radius: 12px; } }
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 5px; padding-bottom: 4px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.2s; position: relative; gap: 1px; min-width: 0; overflow: visible; min-height: 36px; }
+        .calendar-day.has-extra { aspect-ratio: unset; }
+        @media (min-width: 768px) { .calendar-day { border-radius: 12px; padding-top: 7px; } }
         .has-record::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -379,13 +380,13 @@
                                             const mmdd = `${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
                                             const bdayNames = birthdayMap.get(mmdd);
                                             return (
-                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500 hover:bg-pink-50' : 'text-gray-400'}`}>
+                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day${(record && bdayNames) ? ' has-extra' : ''} py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500 hover:bg-pink-50' : 'text-gray-400'}`}>
                                                     <span className="text-sm md:text-lg leading-none flex items-center gap-0.5">
                                                         {day.getDate()}
                                                         {bdayNames && <span className="text-[9px] md:text-[11px] leading-none">🎂</span>}
                                                     </span>
                                                     {record && (
-                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
+                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
                                                             record.type === '연합야유회' ? 'bg-green-100 text-green-600' :
@@ -395,11 +396,11 @@
                                                             {record.type || '순예배'}
                                                         </div>
                                                     )}
-                                                    {bdayNames && (
-                                                        <div className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 w-[95%] mx-auto text-center block leading-[1.2] bg-pink-100 text-pink-500 break-keep">
-                                                            {bdayNames.map(n => n[0]).join('·')}
+                                                    {bdayNames && bdayNames.map((name, idx) => (
+                                                        <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] bg-pink-100 text-pink-500 break-keep">
+                                                            {name}
                                                         </div>
-                                                    )}
+                                                    ))}
                                                 </div>
                                             );
                                         })}
