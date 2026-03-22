@@ -233,7 +233,7 @@
                     if (m.isParticipating && m.name.trim() !== '' && m.birthday && m.birthday.trim() && m.name) {
                         const key = m.birthday.trim(); // MM-DD format
                         const existing = map.get(key) || [];
-                        map.set(key, [...existing, m.name]);
+                        map.set(key, [...existing, { name: m.name, role: m.role || '' }]);
                     }
                 });
                 return map;
@@ -376,9 +376,9 @@
                                                             {record.type || '순예배'}
                                                         </div>
                                                     )}
-                                                    {bdayNames && bdayNames.map((name, idx) => (
-                                                        <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] bg-pink-100 text-pink-500 break-keep">
-                                                            {name}
+                                                    {bdayNames && bdayNames.map((person, idx) => (
+                                                        <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.3] bg-pink-100 text-pink-500 break-keep">
+                                                            {person.name}{person.role && <span className="block text-[7px] sm:text-[8px] font-bold opacity-80">{person.role}</span>}
                                                         </div>
                                                     ))}
                                                 </div>
