@@ -34,13 +34,13 @@
             "theme_color": "#802B22",
             "icons": [
                 {
-                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon5.png",
+                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png",
                     "sizes": "192x192",
                     "type": "image/png",
                     "purpose": "any maskable"
                 },
                 {
-                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon5.png",
+                    "src": "https://raw.githubusercontent.com/jongsungjoo/david5/refs/heads/main/icon2.png",
                     "sizes": "512x512",
                     "type": "image/png",
                     "purpose": "any maskable"
@@ -230,6 +230,18 @@
                 history.forEach(h => map.set(h.date, h));
                 return map;
             }, [history]);
+
+            const birthdayMap = useMemo(() => {
+                const map = new Map();
+                members.forEach(m => {
+                    if (m.birthday && m.birthday.trim() && m.name) {
+                        const key = m.birthday.trim(); // MM-DD format
+                        const existing = map.get(key) || [];
+                        map.set(key, [...existing, m.name]);
+                    }
+                });
+                return map;
+            }, [members]);
             
             const handleDateClick = (dateStr) => scrollRefs.current[dateStr]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -364,8 +376,10 @@
                                             if (!day) return <div key={`empty-${i}`} />;
                                             const dStr = getLocalYYYYMMDD(day);
                                             const record = recordDates.get(dStr);
+                                            const mmdd = `${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                                            const bdayNames = birthdayMap.get(mmdd);
                                             return (
-                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : 'text-gray-400'}`}>
+                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500' : 'text-gray-400'}`}>
                                                     <span className="text-sm md:text-lg">{day.getDate()}</span>
                                                     {record && (
                                                         <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
@@ -376,6 +390,11 @@
                                                             'bg-red-100 text-[#802B22]'
                                                         }`}>
                                                             {record.type || '순예배'}
+                                                        </div>
+                                                    )}
+                                                    {bdayNames && (
+                                                        <div className="text-[7px] sm:text-[8px] font-black text-pink-400 leading-[1.2] text-center w-full px-0.5 mt-0.5 break-keep whitespace-nowrap overflow-hidden text-ellipsis">
+                                                            🎂{bdayNames.map(n => n[0]).join('·')}
                                                         </div>
                                                     )}
                                                 </div>
@@ -652,13 +671,27 @@
                         }}
                     />
                     <div className="absolute top-5 right-5 flex gap-2">
-                        <a
-                            href={src}
-                            download
-                            onClick={(e) => e.stopPropagation()}
-                            className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white/30 transition-colors"
-                            title="이미지 다운로드"
-                        ><Icon name="download" className="w-5 h-5" /></a>
+                        <button
+    onClick={async (e) => {
+        e.stopPropagation();
+        try {
+            const res = await fetch(src);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'image_' + Date.now() + '.jpg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch(err) {
+            alert('다운로드에 실패했습니다. 이미지를 길게 눌러 저장해주세요.');
+        }
+    }}
+    className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white/30 transition-colors"
+    title="이미지 다운로드"
+><Icon name="download" className="w-5 h-5" /></button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onClose(); }}
                             className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-black hover:bg-white/30 transition-colors"
@@ -684,7 +717,7 @@
             </div>
         );
 
-        const WorshipGuideView = ({ guideData, onUpdateGuide, sharedBannerUrl = null }) => {
+        const WorshipGuideView = ({ guideData, onUpdateGuide }) => {
             const [isEditing, setIsEditing] = useState(false);
             const [form, setForm] = useState(guideData);
             const [fullScreenImage, setFullScreenImage] = useState(null);
@@ -855,46 +888,34 @@
 </header>
 
                     {/* 교회 배너 */}
-                    {(() => {
-                        const bannerSrc = sharedBannerUrl || form.bannerImage;
-                        if (sharedBannerUrl !== null) {
-                            // 1~4순: 5순 배너 읽기 전용 표시
-                            return bannerSrc ? (
-                                <div className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                                    <img src={bannerSrc} className="w-full object-cover" alt="교회 배너" />
-                                </div>
-                            ) : null;
-                        }
-                        // 5순: 편집 가능
-                        return isEditing ? (
-                            <div className="w-full">
-                                <label className={`flex flex-col items-center justify-center w-full h-28 rounded-2xl border-2 border-dashed transition-colors cursor-pointer gap-2 ${uploadingSlot === 'bannerImage' ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait' : 'bg-purple-50 text-purple-500 border-purple-200 hover:bg-purple-100'}`}>
-                                    {uploadingSlot === 'bannerImage' ? (
-                                        <span className="flex items-center gap-2 font-black text-sm">
-                                            <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                            업로드 중...
-                                        </span>
-                                    ) : (
-                                        <>
-                                            <Icon name="image" className="w-7 h-7" />
-                                            <span className="font-black text-sm">{form.bannerImage ? '교회 배너 변경' : '교회 배너 첨부'}</span>
-                                            <span className="text-xs font-medium opacity-60">연간 1회 교체용 · 가로형 이미지 권장</span>
-                                        </>
-                                    )}
-                                    <input type="file" hidden accept="image/*" disabled={!!uploadingSlot} onChange={(e) => handleImageUpload(e, 'bannerImage')} />
-                                </label>
-                                {form.bannerImage && (
-                                    <img src={form.bannerImage} className="mt-2 w-full rounded-xl object-cover max-h-28 border border-gray-200" />
+                    {isEditing ? (
+                        <div className="w-full">
+                            <label className={`flex flex-col items-center justify-center w-full h-28 rounded-2xl border-2 border-dashed transition-colors cursor-pointer gap-2 ${uploadingSlot === 'bannerImage' ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait' : 'bg-purple-50 text-purple-500 border-purple-200 hover:bg-purple-100'}`}>
+                                {uploadingSlot === 'bannerImage' ? (
+                                    <span className="flex items-center gap-2 font-black text-sm">
+                                        <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                        업로드 중...
+                                    </span>
+                                ) : (
+                                    <>
+                                        <Icon name="image" className="w-7 h-7" />
+                                        <span className="font-black text-sm">{form.bannerImage ? '교회 배너 변경' : '교회 배너 첨부'}</span>
+                                        <span className="text-xs font-medium opacity-60">연간 1회 교체용 · 가로형 이미지 권장</span>
+                                    </>
                                 )}
+                                <input type="file" hidden accept="image/*" disabled={!!uploadingSlot} onChange={(e) => handleImageUpload(e, 'bannerImage')} />
+                            </label>
+                            {form.bannerImage && (
+                                <img src={form.bannerImage} className="mt-2 w-full rounded-xl object-cover max-h-28 border border-gray-200" />
+                            )}
+                        </div>
+                    ) : (
+                        form.bannerImage && (
+                            <div className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                                <img src={form.bannerImage} className="w-full object-cover" alt="교회 배너" />
                             </div>
-                        ) : (
-                            form.bannerImage && (
-                                <div className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                                    <img src={form.bannerImage} className="w-full object-cover" alt="교회 배너" />
-                                </div>
-                            )
-                        );
-                    })()}
+                        )
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {/* 왼쪽: 주보 스타일 예배 순서 */}
@@ -1504,6 +1525,7 @@
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hName} onChange={e=>onChange({...draft, hName: e.target.value})} placeholder="이름" />
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hRole} onChange={e=>onChange({...draft, hRole: e.target.value})} placeholder="직분" />
                                 </div>
+                                <input className="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold mb-2" value={draft.hBirthday || ''} onChange={e=>onChange({...draft, hBirthday: e.target.value})} placeholder="생일 MM-DD (예: 03-15)" />
                                 <label className="flex items-center gap-2 cursor-pointer pt-1"><input type="checkbox" checked={draft.hPart} onChange={e=>onChange({...draft, hPart: e.target.checked})} className="text-[#802B22] w-4 h-4 rounded cursor-pointer"/><span className="text-xs font-bold text-gray-700">순예배참여</span></label>
                             </div>
                             <div className="bg-white p-3 rounded-lg border border-blue-100">
@@ -1512,6 +1534,7 @@
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wName} onChange={e=>onChange({...draft, wName: e.target.value})} placeholder="이름" />
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wRole} onChange={e=>onChange({...draft, wRole: e.target.value})} placeholder="직분" />
                                 </div>
+                                <input className="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold mb-2" value={draft.wBirthday || ''} onChange={e=>onChange({...draft, wBirthday: e.target.value})} placeholder="생일 MM-DD (예: 03-15)" />
                                 <label className="flex items-center gap-2 cursor-pointer pt-1"><input type="checkbox" checked={draft.wPart} onChange={e=>onChange({...draft, wPart: e.target.checked})} className="text-[#802B22] w-4 h-4 rounded cursor-pointer"/><span className="text-xs font-bold text-gray-700">순예배참여</span></label>
                             </div>
                         </div>
@@ -1541,6 +1564,7 @@
                                 <div className="flex flex-col">
                                     <span className="font-black text-gray-800 text-lg">{husband.name}</span>
                                     <span className="text-xs text-gray-500 font-bold">{husband.role}</span>
+                                    {husband.birthday && <span className="text-[11px] text-pink-400 font-bold flex items-center gap-0.5 mt-0.5">🎂 {husband.birthday}</span>}
                                 </div>
                             ) : <span className="text-gray-400 text-sm font-bold">-</span>}
                             {husband.name && <div className="flex items-center gap-1 mt-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{husband.isParticipating ? '참여' : '미참여'}</span></div>}
@@ -1551,6 +1575,7 @@
                                 <div className="flex flex-col">
                                     <span className="font-black text-gray-800 text-lg">{wife.name}</span>
                                     <span className="text-xs text-gray-500 font-bold">{wife.role}</span>
+                                    {wife.birthday && <span className="text-[11px] text-pink-400 font-bold flex items-center gap-0.5 mt-0.5">🎂 {wife.birthday}</span>}
                                 </div>
                             ) : <span className="text-gray-400 text-sm font-bold">-</span>}
                             {wife.name && <div className="flex items-center gap-1 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{wife.isParticipating ? '참여' : '미참여'}</span></div>}
@@ -1603,7 +1628,9 @@
                     groupedFamilies.forEach(f => {
                         initialDrafts[f.id] = {
                             hName: f.husband?.name || '', hRole: f.husband?.role || '', hPart: f.husband?.isParticipating || false,
+                            hBirthday: f.husband?.birthday || '',
                             wName: f.wife?.name || '', wRole: f.wife?.role || '', wPart: f.wife?.isParticipating || false,
+                            wBirthday: f.wife?.birthday || '',
                             children: f.children || '', vehicle: f.vehicle || ''
                         };
                     });
@@ -1768,6 +1795,7 @@
                                                                 <input className="w-3/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.hName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
                                                                 <input className="w-2/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.hRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
                                                             </div>
+                                                            <input className="w-full p-2 bg-white border border-pink-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm mb-2" value={draft.hBirthday || ''} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hBirthday: e.target.value}})); setHasChanges(true);}} placeholder="🎂 생일 MM-DD"/>
                                                             <label className="flex items-center gap-2 cursor-pointer mt-2 pl-1"><input type="checkbox" checked={draft.hPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-700">순예배 참여</span></label>
                                                         </td>
                                                         <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20">
@@ -1775,6 +1803,7 @@
                                                                 <input className="w-3/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.wName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
                                                                 <input className="w-2/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.wRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
                                                             </div>
+                                                            <input className="w-full p-2 bg-white border border-pink-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm mb-2" value={draft.wBirthday || ''} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wBirthday: e.target.value}})); setHasChanges(true);}} placeholder="🎂 생일 MM-DD"/>
                                                             <label className="flex items-center gap-2 cursor-pointer mt-2 pl-1"><input type="checkbox" checked={draft.wPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-700">순예배 참여</span></label>
                                                         </td>
                                                         <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20"><input className="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.children} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, children: e.target.value}})); setHasChanges(true);}} placeholder="자녀 정보"/></td>
@@ -1792,6 +1821,7 @@
                                                         {husband.name ? (
                                                             <div className="flex flex-col gap-1">
                                                                 <div className="font-black text-gray-800 text-lg md:text-xl whitespace-nowrap">{husband.name} <span className="font-bold text-gray-400 text-sm ml-1.5">{husband.role}</span></div>
+                                                                {husband.birthday && <div className="text-xs text-pink-400 font-bold flex items-center gap-1">🎂 {husband.birthday}</div>}
                                                                 <div className="flex items-center gap-1.5 mt-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500 whitespace-nowrap">{husband.isParticipating?'순예배 참여':'미참여'}</span></div>
                                                             </div>
                                                         ) : <span className="text-gray-300 font-bold">-</span>}
@@ -1800,6 +1830,7 @@
                                                         {wife.name ? (
                                                             <div className="flex flex-col gap-1">
                                                                 <div className="font-black text-gray-800 text-lg md:text-xl whitespace-nowrap">{wife.name} <span className="font-bold text-gray-400 text-sm ml-1.5">{wife.role}</span></div>
+                                                                {wife.birthday && <div className="text-xs text-pink-400 font-bold flex items-center gap-1">🎂 {wife.birthday}</div>}
                                                                 <div className="flex items-center gap-1.5 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500 whitespace-nowrap">{wife.isParticipating?'순예배 참여':'미참여'}</span></div>
                                                             </div>
                                                         ) : <span className="text-gray-300 font-bold">-</span>}
@@ -2029,12 +2060,14 @@
                     if (!draft) continue;
                     if (f.husband?.id) {
                         promises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', f.husband.id), {
-                            name: draft.hName, role: draft.hRole, isParticipating: draft.hPart, children: draft.children, vehicle: draft.vehicle
+                            name: draft.hName, role: draft.hRole, isParticipating: draft.hPart, children: draft.children, vehicle: draft.vehicle,
+                            birthday: draft.hBirthday || ""
                         }));
                     }
                     if (f.wife?.id) {
                         promises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', f.wife.id), {
-                            name: draft.wName, role: draft.wRole, isParticipating: draft.wPart, children: draft.children, vehicle: draft.vehicle
+                            name: draft.wName, role: draft.wRole, isParticipating: draft.wPart, children: draft.children, vehicle: draft.vehicle,
+                            birthday: draft.wBirthday || ""
                         }));
                     }
                 }
@@ -2088,7 +2121,7 @@
                     <div className="main-content flex-1 w-full flex justify-center pt-[74px] md:pt-[80px] pb-[100px] bg-[#F3F4F6]">
                         <div className="w-full max-w-6xl p-4 md:p-6">
                             {view === 'prayer' && <PrayerListView members={members} onUpdate={handleUpdatePrayer} />}
-                            {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} sharedBannerUrl={null} />}
+                            {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} />}
                             {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} adminPass={adminPass} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
                         </div>
                     </div>
