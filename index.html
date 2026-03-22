@@ -93,8 +93,9 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
         @media (min-width: 768px) { .calendar-grid { gap: 4px; } }
         
-        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.2s; position: relative; gap: 2px; min-width: 0; overflow: hidden; }
-        @media (min-width: 768px) { .calendar-day { border-radius: 12px; } }
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 5px; padding-bottom: 4px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; transition: all 0.2s; position: relative; gap: 1px; min-width: 0; overflow: visible; min-height: 36px; }
+        .calendar-day.has-extra { aspect-ratio: unset; }
+        @media (min-width: 768px) { .calendar-day { border-radius: 12px; padding-top: 7px; } }
         .has-record::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -194,7 +195,7 @@
         };
 
         // --- View 1: 순예배기록 ---
-        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory, adminPass }) => {
+        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory, isGlobalAdmin, onRequestAdmin }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const scrollRefs = useRef({});
             const [showAdd, setShowAdd] = useState(false);
@@ -206,11 +207,6 @@
             const [financeEditMode, setFinanceEditMode] = useState(false);
             const [edits, setEdits] = useState({});
             const [carry, setCarry] = useState(finance.carryOver || 0);
-
-            const [showAuth, setShowAuth] = useState(false);
-            const [authInput, setAuthInput] = useState('');
-            const [authError, setAuthError] = useState('');
-            const [pendingAction, setPendingAction] = useState(null);
 
             useEffect(() => { setCarry(finance.carryOver || 0); }, [finance.carryOver]);
 
@@ -230,6 +226,18 @@
                 history.forEach(h => map.set(h.date, h));
                 return map;
             }, [history]);
+
+            const birthdayMap = useMemo(() => {
+                const map = new Map();
+                members.forEach(m => {
+                    if (m.isParticipating && m.name.trim() !== '' && m.birthday && m.birthday.trim() && m.name) {
+                        const key = m.birthday.trim(); // MM-DD format
+                        const existing = map.get(key) || [];
+                        map.set(key, [...existing, m.name]);
+                    }
+                });
+                return map;
+            }, [members]);
             
             const handleDateClick = (dateStr) => scrollRefs.current[dateStr]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -258,22 +266,7 @@
             };
 
             const executeWithAuth = (action) => {
-                setPendingAction(() => action);
-                setShowAuth(true);
-            };
-
-            const handleAuthConfirm = () => {
-                if (authInput === adminPass) {
-                    setShowAuth(false);
-                    setAuthInput('');
-                    setAuthError('');
-                    if (pendingAction) {
-                        pendingAction();
-                        setPendingAction(null);
-                    }
-                } else {
-                    setAuthError('비밀번호가 일치하지 않습니다.');
-                }
+                if (isGlobalAdmin) { action(); } else { onRequestAdmin(action); }
             };
 
             return (
@@ -364,11 +357,16 @@
                                             if (!day) return <div key={`empty-${i}`} />;
                                             const dStr = getLocalYYYYMMDD(day);
                                             const record = recordDates.get(dStr);
+                                            const mmdd = `${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                                            const bdayNames = birthdayMap.get(mmdd);
                                             return (
-                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : 'text-gray-400'}`}>
-                                                    <span className="text-sm md:text-lg">{day.getDate()}</span>
+                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day${(record && bdayNames) ? ' has-extra' : ''} py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500 hover:bg-pink-50' : 'text-gray-400'}`}>
+                                                    <span className="text-sm md:text-lg leading-none flex items-center gap-0.5">
+                                                        {day.getDate()}
+                                                        {bdayNames && <span className="text-[9px] md:text-[11px] leading-none">🎂</span>}
+                                                    </span>
                                                     {record && (
-                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 md:px-1.5 py-0.5 rounded-sm mt-0.5 md:mt-1 w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
+                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
                                                             record.type === '연합야유회' ? 'bg-green-100 text-green-600' :
@@ -378,6 +376,11 @@
                                                             {record.type || '순예배'}
                                                         </div>
                                                     )}
+                                                    {bdayNames && bdayNames.map((name, idx) => (
+                                                        <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] bg-pink-100 text-pink-500 break-keep">
+                                                            {name}
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             );
                                         })}
@@ -402,7 +405,7 @@
                                                             h.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
                                                             h.type === '연합야유회' ? 'bg-green-100 text-green-600' :
                                                             h.type === '미실시' ? 'bg-gray-300 text-gray-700' :
-                                                            'bg-gray-100 text-gray-500'
+                                                            'bg-red-100 text-[#802B22]'
                                                         }`}>
                                                             {h.type || '순예배'}
                                                         </span>
@@ -563,30 +566,6 @@
                         document.body
                     )}
 
-                    {/* 비밀번호 입력 모달 (예배기록 저장/수정/삭제용) */}
-                    {showAuth && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[999999] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
-                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
-                                <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
-                                <input 
-                                    type="password" 
-                                    value={authInput} 
-                                    onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAuthConfirm(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
-                                    placeholder="••••••••" 
-                                    autoFocus
-                                />
-                                {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
-                                <div className="flex gap-3 mt-6">
-                                    <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleAuthConfirm} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
                 </div>
             );
         };
@@ -1506,6 +1485,7 @@
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hName} onChange={e=>onChange({...draft, hName: e.target.value})} placeholder="이름" />
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.hRole} onChange={e=>onChange({...draft, hRole: e.target.value})} placeholder="직분" />
                                 </div>
+                                <input className="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold mb-2" value={draft.hBirthday || ''} onChange={e=>onChange({...draft, hBirthday: e.target.value})} placeholder="생일 MM-DD (예: 03-15)" />
                                 <label className="flex items-center gap-2 cursor-pointer pt-1"><input type="checkbox" checked={draft.hPart} onChange={e=>onChange({...draft, hPart: e.target.checked})} className="text-[#802B22] w-4 h-4 rounded cursor-pointer"/><span className="text-xs font-bold text-gray-700">순예배참여</span></label>
                             </div>
                             <div className="bg-white p-3 rounded-lg border border-blue-100">
@@ -1514,6 +1494,7 @@
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wName} onChange={e=>onChange({...draft, wName: e.target.value})} placeholder="이름" />
                                     <input className="w-1/2 min-w-0 flex-1 p-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold" value={draft.wRole} onChange={e=>onChange({...draft, wRole: e.target.value})} placeholder="직분" />
                                 </div>
+                                <input className="w-full p-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#802B22] font-bold mb-2" value={draft.wBirthday || ''} onChange={e=>onChange({...draft, wBirthday: e.target.value})} placeholder="생일 MM-DD (예: 03-15)" />
                                 <label className="flex items-center gap-2 cursor-pointer pt-1"><input type="checkbox" checked={draft.wPart} onChange={e=>onChange({...draft, wPart: e.target.checked})} className="text-[#802B22] w-4 h-4 rounded cursor-pointer"/><span className="text-xs font-bold text-gray-700">순예배참여</span></label>
                             </div>
                         </div>
@@ -1543,6 +1524,7 @@
                                 <div className="flex flex-col">
                                     <span className="font-black text-gray-800 text-lg">{husband.name}</span>
                                     <span className="text-xs text-gray-500 font-bold">{husband.role}</span>
+                                    {husband.birthday && <span className="text-[11px] text-pink-400 font-bold flex items-center gap-0.5 mt-0.5">🎂 {husband.birthday}</span>}
                                 </div>
                             ) : <span className="text-gray-400 text-sm font-bold">-</span>}
                             {husband.name && <div className="flex items-center gap-1 mt-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{husband.isParticipating ? '참여' : '미참여'}</span></div>}
@@ -1553,6 +1535,7 @@
                                 <div className="flex flex-col">
                                     <span className="font-black text-gray-800 text-lg">{wife.name}</span>
                                     <span className="text-xs text-gray-500 font-bold">{wife.role}</span>
+                                    {wife.birthday && <span className="text-[11px] text-pink-400 font-bold flex items-center gap-0.5 mt-0.5">🎂 {wife.birthday}</span>}
                                 </div>
                             ) : <span className="text-gray-400 text-sm font-bold">-</span>}
                             {wife.name && <div className="flex items-center gap-1 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-3.5 h-3.5 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-[10px] font-bold text-gray-500">{wife.isParticipating ? '참여' : '미참여'}</span></div>}
@@ -1572,11 +1555,8 @@
             );
         };
 
-        const DirectoryModal = ({ members, onClose, onGlobalSave, onAddFamily, onDeleteFamily, adminPass, onChangeAdminPass }) => {
+        const DirectoryModal = ({ members, onClose, onGlobalSave, onAddFamily, onDeleteFamily, adminPass, onChangeAdminPass, isGlobalAdmin, onRequestAdmin }) => {
             const [isAdmin, setIsAdmin] = useState(false);
-            const [authInput, setAuthInput] = useState('');
-            const [showAuth, setShowAuth] = useState(false);
-            const [authError, setAuthError] = useState('');
             const [showChangePwd, setShowChangePwd] = useState(false);
             const [newPwd, setNewPwd] = useState('');
 
@@ -1605,7 +1585,9 @@
                     groupedFamilies.forEach(f => {
                         initialDrafts[f.id] = {
                             hName: f.husband?.name || '', hRole: f.husband?.role || '', hPart: f.husband?.isParticipating || false,
+                            hBirthday: f.husband?.birthday || '',
                             wName: f.wife?.name || '', wRole: f.wife?.role || '', wPart: f.wife?.isParticipating || false,
+                            wBirthday: f.wife?.birthday || '',
                             children: f.children || '', vehicle: f.vehicle || ''
                         };
                     });
@@ -1615,11 +1597,7 @@
             }, [isAdmin, groupedFamilies]);
 
             const handleLogin = () => {
-                if (authInput === adminPass) {
-                    setIsAdmin(true); setShowAuth(false); setAuthInput(''); setAuthError('');
-                } else { 
-                    setAuthError('비밀번호가 일치하지 않습니다.'); 
-                }
+                setIsAdmin(true);
             };
 
             const handleChangePwd = () => {
@@ -1708,7 +1686,7 @@
                                     <button onClick={() => executeGlobalSave(true)} className="px-3 md:px-4 py-2 bg-[#802B22] text-white text-sm font-black rounded-lg active:scale-95 shadow-md flex items-center gap-1.5 hover:bg-[#6c231c]"><Icon name="save" className="w-4 h-4"/>업데이트 저장</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowAuth(true)} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-black rounded-lg active:scale-95 flex items-center gap-1.5 hover:bg-gray-50 shadow-sm"><Icon name="lock" className="w-4 h-4"/> 관리자 편집</button>
+                                <button onClick={() => { if (isGlobalAdmin) { setIsAdmin(true); } else { onRequestAdmin(() => setIsAdmin(true)); } }} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-black rounded-lg active:scale-95 flex items-center gap-1.5 hover:bg-gray-50 shadow-sm"><Icon name="lock" className="w-4 h-4"/> 관리자 편집</button>
                             )}
                         </div>
                     </header>
@@ -1770,6 +1748,7 @@
                                                                 <input className="w-3/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.hName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
                                                                 <input className="w-2/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.hRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
                                                             </div>
+                                                            <input className="w-full p-2 bg-white border border-pink-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm mb-2" value={draft.hBirthday || ''} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hBirthday: e.target.value}})); setHasChanges(true);}} placeholder="🎂 생일 MM-DD"/>
                                                             <label className="flex items-center gap-2 cursor-pointer mt-2 pl-1"><input type="checkbox" checked={draft.hPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, hPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-700">순예배 참여</span></label>
                                                         </td>
                                                         <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20">
@@ -1777,6 +1756,7 @@
                                                                 <input className="w-3/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.wName} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wName: e.target.value}})); setHasChanges(true);}} placeholder="이름"/>
                                                                 <input className="w-2/5 p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.wRole} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wRole: e.target.value}})); setHasChanges(true);}} placeholder="직분"/>
                                                             </div>
+                                                            <input className="w-full p-2 bg-white border border-pink-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm mb-2" value={draft.wBirthday || ''} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wBirthday: e.target.value}})); setHasChanges(true);}} placeholder="🎂 생일 MM-DD"/>
                                                             <label className="flex items-center gap-2 cursor-pointer mt-2 pl-1"><input type="checkbox" checked={draft.wPart} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, wPart: e.target.checked}})); setHasChanges(true);}} className="text-[#802B22] rounded cursor-pointer w-4 h-4"/><span className="text-xs font-bold text-gray-700">순예배 참여</span></label>
                                                         </td>
                                                         <td className="py-4 px-6 border-r border-gray-100 bg-blue-50/20"><input className="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-sm outline-none focus:border-[#802B22] font-bold shadow-sm" value={draft.children} onChange={e=>{setDrafts(p=>({...p, [f.id]:{...draft, children: e.target.value}})); setHasChanges(true);}} placeholder="자녀 정보"/></td>
@@ -1794,6 +1774,7 @@
                                                         {husband.name ? (
                                                             <div className="flex flex-col gap-1">
                                                                 <div className="font-black text-gray-800 text-lg md:text-xl whitespace-nowrap">{husband.name} <span className="font-bold text-gray-400 text-sm ml-1.5">{husband.role}</span></div>
+                                                                {husband.birthday && <div className="text-xs text-pink-400 font-bold flex items-center gap-1">🎂 {husband.birthday}</div>}
                                                                 <div className="flex items-center gap-1.5 mt-1"><Icon name={husband.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${husband.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500 whitespace-nowrap">{husband.isParticipating?'순예배 참여':'미참여'}</span></div>
                                                             </div>
                                                         ) : <span className="text-gray-300 font-bold">-</span>}
@@ -1802,6 +1783,7 @@
                                                         {wife.name ? (
                                                             <div className="flex flex-col gap-1">
                                                                 <div className="font-black text-gray-800 text-lg md:text-xl whitespace-nowrap">{wife.name} <span className="font-bold text-gray-400 text-sm ml-1.5">{wife.role}</span></div>
+                                                                {wife.birthday && <div className="text-xs text-pink-400 font-bold flex items-center gap-1">🎂 {wife.birthday}</div>}
                                                                 <div className="flex items-center gap-1.5 mt-1"><Icon name={wife.isParticipating?"check-circle":"circle"} className={`w-4 h-4 ${wife.isParticipating?'text-[#802B22]':'text-gray-300'}`}/><span className="text-xs font-bold text-gray-500 whitespace-nowrap">{wife.isParticipating?'순예배 참여':'미참여'}</span></div>
                                                             </div>
                                                         ) : <span className="text-gray-300 font-bold">-</span>}
@@ -1821,31 +1803,6 @@
                         </div>
                     </div>
 
-                    {/* 관리자 비밀번호 모달 (일괄 적용) */}
-                    {showAuth && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
-                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
-                                <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
-                                <input 
-                                    type="password" 
-                                    value={authInput} 
-                                    onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
-                                    placeholder="••••••••" 
-                                    autoFocus
-                                />
-                                {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
-                                <div className="flex gap-3 mt-6">
-                                    <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleLogin} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
-                    
                     {/* 비밀번호 변경 모달 */}
                     {showChangePwd && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
@@ -1880,6 +1837,30 @@
             const [history, setHistory] = useState([]);
             const [finance, setFinance] = useState({ carryOver: 180000 });
             const [adminPass, setAdminPass] = useState("00");
+
+            // --- 전역 관리자 인증 상태 ---
+            const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+            const [showGlobalAuth, setShowGlobalAuth] = useState(false);
+            const [globalAuthInput, setGlobalAuthInput] = useState('');
+            const [globalAuthError, setGlobalAuthError] = useState('');
+            const [pendingGlobalAction, setPendingGlobalAction] = useState(null);
+
+            const requestAdmin = (action) => {
+                if (isGlobalAdmin) { action(); }
+                else { setPendingGlobalAction(() => action); setShowGlobalAuth(true); }
+            };
+            const handleGlobalAuthConfirm = () => {
+                if (globalAuthInput === adminPass) {
+                    setIsGlobalAdmin(true);
+                    setShowGlobalAuth(false);
+                    setGlobalAuthInput('');
+                    setGlobalAuthError('');
+                    if (pendingGlobalAction) { pendingGlobalAction(); setPendingGlobalAction(null); }
+                } else {
+                    setGlobalAuthError('비밀번호가 일치하지 않습니다.');
+                }
+            };
+            const logoutAdmin = () => { setIsGlobalAdmin(false); };
 
             // --- 스크롤 인터랙션용 상태 및 로직 ---
             const [showNav, setShowNav] = useState(true);
@@ -2031,12 +2012,14 @@
                     if (!draft) continue;
                     if (f.husband?.id) {
                         promises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', f.husband.id), {
-                            name: draft.hName, role: draft.hRole, isParticipating: draft.hPart, children: draft.children, vehicle: draft.vehicle
+                            name: draft.hName, role: draft.hRole, isParticipating: draft.hPart, children: draft.children, vehicle: draft.vehicle,
+                            birthday: draft.hBirthday || ""
                         }));
                     }
                     if (f.wife?.id) {
                         promises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', f.wife.id), {
-                            name: draft.wName, role: draft.wRole, isParticipating: draft.wPart, children: draft.children, vehicle: draft.vehicle
+                            name: draft.wName, role: draft.wRole, isParticipating: draft.wPart, children: draft.children, vehicle: draft.vehicle,
+                            birthday: draft.wBirthday || ""
                         }));
                     }
                 }
@@ -2082,16 +2065,47 @@
                     <div className={`bg-white border-b border-gray-100 shadow-sm z-40 flex justify-center w-full fixed top-0 transition-transform duration-300 ease-in-out ${showNav ? 'translate-y-0' : '-translate-y-full'}`}>
                         <div className="w-full max-w-6xl flex items-center gap-3 p-4 md:p-5">
                             <img src="https://raw.githubusercontent.com/jongsungjoo/grace/refs/heads/main/logo.png" className="w-9 h-9 object-contain rounded-xl" alt="logo" />
-                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800">온유공동체 다윗 5순 매니져</h2>
+                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800 flex-1">온유공동체 다윗 5순 매니져</h2>
+                            {isGlobalAdmin && (
+                                <button onClick={logoutAdmin} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-[#802B22] text-xs font-black rounded-xl active:scale-95 hover:bg-red-100 transition-colors shadow-sm">
+                                    <Icon name="lock" className="w-3.5 h-3.5" />
+                                    관리자 종료
+                                </button>
+                            )}
                         </div>
                     </div>
+
+                    {/* 전역 관리자 인증 모달 */}
+                    {showGlobalAuth && ReactDOM.createPortal(
+                        <div className="fixed inset-0 z-[999999] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => {setShowGlobalAuth(false); setGlobalAuthError(''); setGlobalAuthInput('');}}>
+                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-2xl font-black text-gray-800 mb-2">관리자 인증</h3>
+                                <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
+                                <input
+                                    type="password"
+                                    value={globalAuthInput}
+                                    onChange={e=>{setGlobalAuthInput(e.target.value); setGlobalAuthError('');}}
+                                    onKeyDown={e=>{ if(e.key==='Enter') handleGlobalAuthConfirm(); }}
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${globalAuthError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`}
+                                    placeholder="••••••••"
+                                    autoFocus
+                                />
+                                {globalAuthError && <p className="text-red-500 text-sm font-bold mb-2">{globalAuthError}</p>}
+                                <div className="flex gap-3 mt-6">
+                                    <button onClick={()=>{setShowGlobalAuth(false); setGlobalAuthError(''); setGlobalAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
+                                    <button onClick={handleGlobalAuthConfirm} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )}
 
                     {/* Main Content: 헤더 공간 확보를 위해 pt-20 정도 추가 */}
                     <div className="main-content flex-1 w-full flex justify-center pt-[74px] md:pt-[80px] pb-[100px] bg-[#F3F4F6]">
                         <div className="w-full max-w-6xl p-4 md:p-6">
                             {view === 'prayer' && <PrayerListView members={members} onUpdate={handleUpdatePrayer} />}
                             {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} />}
-                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} adminPass={adminPass} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
+                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} isGlobalAdmin={isGlobalAdmin} onRequestAdmin={requestAdmin} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
                         </div>
                     </div>
 
@@ -2126,7 +2140,7 @@
                         </div>
                     </nav>
 
-                    {showDirectory && <DirectoryModal members={members} onClose={() => setShowDirectory(false)} onGlobalSave={handleGlobalSaveFamilyInfo} onAddFamily={handleAddFamily} onDeleteFamily={handleDeleteFamily} adminPass={adminPass} onChangeAdminPass={handleChangeAdminPass} />}
+                    {showDirectory && <DirectoryModal members={members} onClose={() => setShowDirectory(false)} onGlobalSave={handleGlobalSaveFamilyInfo} onAddFamily={handleAddFamily} onDeleteFamily={handleDeleteFamily} adminPass={adminPass} onChangeAdminPass={handleChangeAdminPass} isGlobalAdmin={isGlobalAdmin} onRequestAdmin={requestAdmin} />}
                 </div>
             );
         };
