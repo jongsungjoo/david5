@@ -652,13 +652,27 @@
                         }}
                     />
                     <div className="absolute top-5 right-5 flex gap-2">
-                        <a
-                            href={src}
-                            download
-                            onClick={(e) => e.stopPropagation()}
-                            className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white/30 transition-colors"
-                            title="이미지 다운로드"
-                        ><Icon name="download" className="w-5 h-5" /></a>
+                        <button
+    onClick={async (e) => {
+        e.stopPropagation();
+        try {
+            const res = await fetch(src);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'image_' + Date.now() + '.jpg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch(err) {
+            alert('다운로드에 실패했습니다. 이미지를 길게 눌러 저장해주세요.');
+        }
+    }}
+    className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white/30 transition-colors"
+    title="이미지 다운로드"
+><Icon name="download" className="w-5 h-5" /></button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onClose(); }}
                             className="bg-white/20 backdrop-blur-sm text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-black hover:bg-white/30 transition-colors"
