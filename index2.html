@@ -195,7 +195,7 @@
         };
 
         // --- View 1: 순예배기록 ---
-        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory, adminPass }) => {
+        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory, isGlobalAdmin, onRequestAdmin }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const scrollRefs = useRef({});
             const [showAdd, setShowAdd] = useState(false);
@@ -207,11 +207,6 @@
             const [financeEditMode, setFinanceEditMode] = useState(false);
             const [edits, setEdits] = useState({});
             const [carry, setCarry] = useState(finance.carryOver || 0);
-
-            const [showAuth, setShowAuth] = useState(false);
-            const [authInput, setAuthInput] = useState('');
-            const [authError, setAuthError] = useState('');
-            const [pendingAction, setPendingAction] = useState(null);
 
             useEffect(() => { setCarry(finance.carryOver || 0); }, [finance.carryOver]);
 
@@ -271,22 +266,7 @@
             };
 
             const executeWithAuth = (action) => {
-                setPendingAction(() => action);
-                setShowAuth(true);
-            };
-
-            const handleAuthConfirm = () => {
-                if (authInput === adminPass) {
-                    setShowAuth(false);
-                    setAuthInput('');
-                    setAuthError('');
-                    if (pendingAction) {
-                        pendingAction();
-                        setPendingAction(null);
-                    }
-                } else {
-                    setAuthError('비밀번호가 일치하지 않습니다.');
-                }
+                if (isGlobalAdmin) { action(); } else { onRequestAdmin(action); }
             };
 
             return (
@@ -586,30 +566,6 @@
                         document.body
                     )}
 
-                    {/* 비밀번호 입력 모달 (예배기록 저장/수정/삭제용) */}
-                    {showAuth && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[999999] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
-                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
-                                <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
-                                <input 
-                                    type="password" 
-                                    value={authInput} 
-                                    onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAuthConfirm(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
-                                    placeholder="••••••••" 
-                                    autoFocus
-                                />
-                                {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
-                                <div className="flex gap-3 mt-6">
-                                    <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleAuthConfirm} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
                 </div>
             );
         };
@@ -1599,11 +1555,8 @@
             );
         };
 
-        const DirectoryModal = ({ members, onClose, onGlobalSave, onAddFamily, onDeleteFamily, adminPass, onChangeAdminPass }) => {
+        const DirectoryModal = ({ members, onClose, onGlobalSave, onAddFamily, onDeleteFamily, adminPass, onChangeAdminPass, isGlobalAdmin, onRequestAdmin }) => {
             const [isAdmin, setIsAdmin] = useState(false);
-            const [authInput, setAuthInput] = useState('');
-            const [showAuth, setShowAuth] = useState(false);
-            const [authError, setAuthError] = useState('');
             const [showChangePwd, setShowChangePwd] = useState(false);
             const [newPwd, setNewPwd] = useState('');
 
@@ -1644,11 +1597,7 @@
             }, [isAdmin, groupedFamilies]);
 
             const handleLogin = () => {
-                if (authInput === adminPass) {
-                    setIsAdmin(true); setShowAuth(false); setAuthInput(''); setAuthError('');
-                } else { 
-                    setAuthError('비밀번호가 일치하지 않습니다.'); 
-                }
+                setIsAdmin(true);
             };
 
             const handleChangePwd = () => {
@@ -1737,7 +1686,7 @@
                                     <button onClick={() => executeGlobalSave(true)} className="px-3 md:px-4 py-2 bg-[#802B22] text-white text-sm font-black rounded-lg active:scale-95 shadow-md flex items-center gap-1.5 hover:bg-[#6c231c]"><Icon name="save" className="w-4 h-4"/>업데이트 저장</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowAuth(true)} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-black rounded-lg active:scale-95 flex items-center gap-1.5 hover:bg-gray-50 shadow-sm"><Icon name="lock" className="w-4 h-4"/> 관리자 편집</button>
+                                <button onClick={() => { if (isGlobalAdmin) { setIsAdmin(true); } else { onRequestAdmin(() => setIsAdmin(true)); } }} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-black rounded-lg active:scale-95 flex items-center gap-1.5 hover:bg-gray-50 shadow-sm"><Icon name="lock" className="w-4 h-4"/> 관리자 편집</button>
                             )}
                         </div>
                     </header>
@@ -1854,31 +1803,6 @@
                         </div>
                     </div>
 
-                    {/* 관리자 비밀번호 모달 (일괄 적용) */}
-                    {showAuth && ReactDOM.createPortal(
-                        <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}}>
-                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
-                                <h3 className="text-2xl font-black text-gray-800 mb-2">매니저 인증</h3>
-                                <p className="text-sm text-gray-500 font-bold mb-6">보안을 위해 비밀번호가 필요합니다.</p>
-                                <input 
-                                    type="password" 
-                                    value={authInput} 
-                                    onChange={e=>{setAuthInput(e.target.value); setAuthError('');}} 
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
-                                    className={`w-full p-4 bg-[#F3F4F6] border ${authError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`} 
-                                    placeholder="••••••••" 
-                                    autoFocus
-                                />
-                                {authError && <p className="text-red-500 text-sm font-bold mb-2">{authError}</p>}
-                                <div className="flex gap-3 mt-6">
-                                    <button onClick={() => {setShowAuth(false); setAuthError(''); setAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
-                                    <button onClick={handleLogin} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
-                    
                     {/* 비밀번호 변경 모달 */}
                     {showChangePwd && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={() => setShowChangePwd(false)}>
@@ -1913,6 +1837,30 @@
             const [history, setHistory] = useState([]);
             const [finance, setFinance] = useState({ carryOver: 180000 });
             const [adminPass, setAdminPass] = useState("00");
+
+            // --- 전역 관리자 인증 상태 ---
+            const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+            const [showGlobalAuth, setShowGlobalAuth] = useState(false);
+            const [globalAuthInput, setGlobalAuthInput] = useState('');
+            const [globalAuthError, setGlobalAuthError] = useState('');
+            const [pendingGlobalAction, setPendingGlobalAction] = useState(null);
+
+            const requestAdmin = (action) => {
+                if (isGlobalAdmin) { action(); }
+                else { setPendingGlobalAction(() => action); setShowGlobalAuth(true); }
+            };
+            const handleGlobalAuthConfirm = () => {
+                if (globalAuthInput === adminPass) {
+                    setIsGlobalAdmin(true);
+                    setShowGlobalAuth(false);
+                    setGlobalAuthInput('');
+                    setGlobalAuthError('');
+                    if (pendingGlobalAction) { pendingGlobalAction(); setPendingGlobalAction(null); }
+                } else {
+                    setGlobalAuthError('비밀번호가 일치하지 않습니다.');
+                }
+            };
+            const logoutAdmin = () => { setIsGlobalAdmin(false); };
 
             // --- 스크롤 인터랙션용 상태 및 로직 ---
             const [showNav, setShowNav] = useState(true);
@@ -2117,16 +2065,47 @@
                     <div className={`bg-white border-b border-gray-100 shadow-sm z-40 flex justify-center w-full fixed top-0 transition-transform duration-300 ease-in-out ${showNav ? 'translate-y-0' : '-translate-y-full'}`}>
                         <div className="w-full max-w-6xl flex items-center gap-3 p-4 md:p-5">
                             <img src="https://raw.githubusercontent.com/jongsungjoo/grace/refs/heads/main/logo.png" className="w-9 h-9 object-contain rounded-xl" alt="logo" />
-                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800">온유공동체 다윗 5순 매니져</h2>
+                            <h2 className="text-[19px] md:text-xl font-black tracking-tighter text-gray-800 flex-1">온유공동체 다윗 5순 매니져</h2>
+                            {isGlobalAdmin && (
+                                <button onClick={logoutAdmin} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-[#802B22] text-xs font-black rounded-xl active:scale-95 hover:bg-red-100 transition-colors shadow-sm">
+                                    <Icon name="lock" className="w-3.5 h-3.5" />
+                                    관리자 종료
+                                </button>
+                            )}
                         </div>
                     </div>
+
+                    {/* 전역 관리자 인증 모달 */}
+                    {showGlobalAuth && ReactDOM.createPortal(
+                        <div className="fixed inset-0 z-[999999] bg-white/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => {setShowGlobalAuth(false); setGlobalAuthError(''); setGlobalAuthInput('');}}>
+                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 text-center" onClick={e=>e.stopPropagation()}>
+                                <h3 className="text-2xl font-black text-gray-800 mb-2">관리자 인증</h3>
+                                <p className="text-sm text-gray-500 font-bold mb-6">인증 후 종료 전까지 추가 확인 없이 편집할 수 있습니다.</p>
+                                <input
+                                    type="password"
+                                    value={globalAuthInput}
+                                    onChange={e=>{setGlobalAuthInput(e.target.value); setGlobalAuthError('');}}
+                                    onKeyDown={e=>{ if(e.key==='Enter') handleGlobalAuthConfirm(); }}
+                                    className={`w-full p-4 bg-[#F3F4F6] border ${globalAuthError?'border-red-400':'border-transparent'} rounded-2xl font-black text-center text-xl tracking-[0.2em] mb-2 outline-none focus:border-[#802B22] transition-colors`}
+                                    placeholder="••••••••"
+                                    autoFocus
+                                />
+                                {globalAuthError && <p className="text-red-500 text-sm font-bold mb-2">{globalAuthError}</p>}
+                                <div className="flex gap-3 mt-6">
+                                    <button onClick={()=>{setShowGlobalAuth(false); setGlobalAuthError(''); setGlobalAuthInput('');}} className="flex-1 py-4 text-gray-500 text-lg font-black rounded-2xl active:scale-95 hover:bg-gray-50 transition-colors">취소</button>
+                                    <button onClick={handleGlobalAuthConfirm} className="flex-1 py-4 bg-[#802B22] text-white text-lg font-black rounded-2xl active:scale-95 shadow-md hover:bg-[#6c231c] transition-colors">확인</button>
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )}
 
                     {/* Main Content: 헤더 공간 확보를 위해 pt-20 정도 추가 */}
                     <div className="main-content flex-1 w-full flex justify-center pt-[74px] md:pt-[80px] pb-[100px] bg-[#F3F4F6]">
                         <div className="w-full max-w-6xl p-4 md:p-6">
                             {view === 'prayer' && <PrayerListView members={members} onUpdate={handleUpdatePrayer} />}
                             {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} />}
-                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} adminPass={adminPass} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
+                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} isGlobalAdmin={isGlobalAdmin} onRequestAdmin={requestAdmin} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
                         </div>
                     </div>
 
@@ -2161,7 +2140,7 @@
                         </div>
                     </nav>
 
-                    {showDirectory && <DirectoryModal members={members} onClose={() => setShowDirectory(false)} onGlobalSave={handleGlobalSaveFamilyInfo} onAddFamily={handleAddFamily} onDeleteFamily={handleDeleteFamily} adminPass={adminPass} onChangeAdminPass={handleChangeAdminPass} />}
+                    {showDirectory && <DirectoryModal members={members} onClose={() => setShowDirectory(false)} onGlobalSave={handleGlobalSaveFamilyInfo} onAddFamily={handleAddFamily} onDeleteFamily={handleDeleteFamily} adminPass={adminPass} onChangeAdminPass={handleChangeAdminPass} isGlobalAdmin={isGlobalAdmin} onRequestAdmin={requestAdmin} />}
                 </div>
             );
         };
