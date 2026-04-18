@@ -372,7 +372,7 @@
                                                         <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
                                                             record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
-                                                            record.type === '연합야유회' ? 'bg-green-100 text-green-600' :
+                                                            record.type === '연합순예배' ? 'bg-green-100 text-green-600' :
                                                             record.type === '미실시' ? 'bg-gray-300 text-gray-700' :
                                                             'bg-red-100 text-[#802B22]'
                                                         }`}>
@@ -406,7 +406,7 @@
                                                         <span className={`text-xs px-2.5 py-1 rounded-md font-black ${
                                                             h.type === '휴강' ? 'bg-gray-200 text-gray-600' :
                                                             h.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
-                                                            h.type === '연합야유회' ? 'bg-green-100 text-green-600' :
+                                                            h.type === '연합순예배' ? 'bg-green-100 text-green-600' :
                                                             h.type === '미실시' ? 'bg-gray-300 text-gray-700' :
                                                             'bg-red-100 text-[#802B22]'
                                                         }`}>
@@ -495,7 +495,7 @@
                                                 <option value="순예배">순예배</option>
                                                 <option value="휴강">휴강</option>
                                                 <option value="종강예배">종강예배</option>
-                                                <option value="연합야유회">연합야유회</option>
+                                                <option value="연합순예배">연합순예배</option>
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
@@ -554,7 +554,7 @@
                                                 <option value="순예배">순예배</option>
                                                 <option value="휴강">휴강</option>
                                                 <option value="종강예배">종강예배</option>
-                                                <option value="연합야유회">연합야유회</option>
+                                                <option value="연합순예배">연합순예배</option>
                                                 <option value="미실시">미실시</option>
                                             </select>
                                         </div>
@@ -1870,7 +1870,7 @@
 
         const App = () => {
             const [ready, setReady] = useState(false);
-            const [view, setView] = useState('prayer');
+            const [view, setView] = useState('guide');
             const [showDirectory, setShowDirectory] = useState(false); 
             const [members, setMembers] = useState([]);
             const [history, setHistory] = useState([]);
