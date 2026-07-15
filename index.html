@@ -195,7 +195,7 @@
         };
 
         // --- View 1: 순예배기록 ---
-        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinanceEdits, onUpdateRecord, onDeleteRecord, onOpenDirectory, isGlobalAdmin, onRequestAdmin }) => {
+        const WorshipHistoryView = ({ history, members, onAddRecord, finance, onUpdateFinance, onUpdateRecord, onDeleteRecord, onOpenDirectory, isGlobalAdmin, onRequestAdmin }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const scrollRefs = useRef({});
             const [showAdd, setShowAdd] = useState(false);
@@ -205,11 +205,12 @@
 
             const [editingRecord, setEditingRecord] = useState(null); 
             const [prayerModal, setPrayerModal] = useState(null); // { name, prayer }
+            
+            // --- 재정 현황 관리를 위한 새로운 State ---
             const [financeEditMode, setFinanceEditMode] = useState(false);
-            const [edits, setEdits] = useState({});
-            const [carry, setCarry] = useState(finance.carryOver || 0);
-
-            useEffect(() => { setCarry(finance.carryOver || 0); }, [finance.carryOver]);
+            const [adjDate, setAdjDate] = useState(getLocalYYYYMMDD(new Date()));
+            const [adjReason, setAdjReason] = useState("");
+            const [adjAmount, setAdjAmount] = useState("");
 
             const daysInMonth = useMemo(() => {
                 const year = currentMonth.getFullYear();
@@ -242,9 +243,23 @@
             
             const handleDateClick = (dateStr) => scrollRefs.current[dateStr]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+            // 누적합산 금액 계산 로직 업데이트 (순예배헌금 40% + 수동추가내역 총합)
             const cumulativeTotal = useMemo(() => {
                 const totalOffering = history.reduce((sum, h) => sum + Math.floor((Number(h.offering) || 0) * 0.4), 0);
-                return totalOffering + (Number(finance.carryOver) || 0);
+                const adjustmentsTotal = (finance.adjustments || []).reduce((sum, a) => sum + Number(a.amount), 0);
+                return totalOffering + (Number(finance.carryOver) || 0) + adjustmentsTotal;
+            }, [history, finance]);
+
+            // 전체 재정 내역 통합 리스트 구성
+            const combinedList = useMemo(() => {
+                const wList = history.map(h => ({
+                    id: h.id, type: 'worship', date: h.date, title: h.type || '순예배',
+                    amount: Math.floor((Number(h.offering)||0) * 0.4), originalAmount: Number(h.offering)||0
+                }));
+                const aList = (finance.adjustments || []).map(a => ({
+                    id: a.id, type: 'manual', date: a.date, title: a.reason, amount: Number(a.amount)
+                }));
+                return [...wList, ...aList].sort((a,b) => b.date.localeCompare(a.date));
             }, [history, finance]);
 
             const currentYear = currentMonth.getFullYear();
@@ -261,15 +276,39 @@
                 return { count };
             }, [history, currentYear, currentMonth]);
 
-            const handleSaveFinance = () => {
-                onUpdateFinanceEdits(carry, edits);
-                setFinanceEditMode(false);
-                setEdits({});
-                alert("재정 설정이 저장되었습니다.");
-            };
-
             const executeWithAuth = (action) => {
                 if (isGlobalAdmin) { action(); } else { onRequestAdmin(action); }
+            };
+
+            // 수동 내역 추가 핸들러
+            const handleAddAdjustment = () => {
+                if (!adjReason.trim() || !adjAmount) return alert("사유와 금액을 모두 입력해주세요.");
+                const newAdj = {
+                    id: 'adj_' + Date.now(),
+                    date: adjDate,
+                    reason: adjReason,
+                    amount: Number(adjAmount)
+                };
+                const newFinance = {
+                    ...finance,
+                    adjustments: [...(finance.adjustments || []), newAdj]
+                };
+                onUpdateFinance(newFinance);
+                setAdjReason('');
+                setAdjAmount('');
+                alert("수동 내역이 추가되었습니다.");
+            };
+
+            // 수동 내역 삭제 핸들러 (관리자 인증 연동)
+            const handleDeleteAdjustment = (id) => {
+                if(!confirm("해당 수동 내역을 삭제하시겠습니까?")) return;
+                executeWithAuth(() => {
+                    const newFinance = {
+                        ...finance,
+                        adjustments: (finance.adjustments || []).filter(a => a.id !== id)
+                    };
+                    onUpdateFinance(newFinance);
+                });
             };
 
             return (
@@ -279,197 +318,222 @@
                         <button onClick={() => setShowAdd(!showAdd)} className="w-10 h-10 bg-[#802B22] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90 hover:bg-[#6c231c]"><Icon name={showAdd ? "x" : "plus"} /></button>
                     </header>
 
-                    {financeEditMode ? (
-                        <div className="max-w-xl mx-auto w-full">
-                            <Card className="border-4 border-[#802B22] bg-white relative z-20 fade-in p-4 md:p-6">
-                                <div className="flex justify-between items-center mb-4 md:mb-5 border-b border-gray-50 pb-3">
-                                    <h3 className="font-black text-lg md:text-2xl text-gray-800 flex items-center gap-2"><Icon name="coins" className="text-[#802B22] w-5 h-5"/> 누적순헌금 현황</h3>
-                                    <button onClick={() => setFinanceEditMode(false)} className="p-1.5 bg-gray-50 rounded-full text-gray-500 active:scale-95 hover:bg-gray-100"><Icon name="x" className="w-5 h-5" /></button>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        {/* 왼쪽 열: 통계 & 달력 */}
+                        <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-[100px] z-30">
+                            <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
+                                <div className="flex items-center gap-2 border-b border-gray-50 pb-3">
+                                    <Icon name="bar-chart-2" className="w-5 h-5 text-[#802B22]" />
+                                    <span className="font-black text-[#802B22] text-base">{currentYear}년 {currentHalf} 현황</span>
                                 </div>
-                                <div className="space-y-5">
-                                    
-                                    <div className="bg-red-50 p-4 md:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center sm:items-end gap-2 border border-red-100 shadow-inner">
-                                        <span className="font-black text-[#802B22] text-xs md:text-sm tracking-widest uppercase">총 누적합산 금액</span>
-                                        <span className="font-black text-2xl md:text-3xl text-gray-800 tracking-tight">₩ {cumulativeTotal.toLocaleString()}</span>
+                                <div className="grid grid-cols-3 divide-x divide-gray-100">
+                                    <div className="flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-blue-50 bg-blue-50/50 rounded-xl py-3 mx-1" onClick={onOpenDirectory}>
+                                        <span className="text-xs font-bold text-blue-500 uppercase mb-1.5 flex items-center gap-1"><Icon name="users" className="w-3.5 h-3.5"/> 참석순원</span>
+                                        <span className="font-black text-gray-800 text-xl md:text-2xl">{activeMembers.length}명</span>
                                     </div>
-
-                                    <div className="w-full">
-                                        <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest block mb-1.5 px-1">전학기 이월금</label>
-                                        <div className="flex items-center gap-2 w-full">
-                                            <div className="flex items-center gap-2 bg-gray-50 p-1.5 pl-3 rounded-xl flex-1 border border-gray-100">
-                                                <input type="number" value={carry} onChange={e => setCarry(e.target.value)} className="flex-1 min-w-0 w-full py-1 bg-transparent font-black text-sm md:text-base outline-none text-right text-gray-700" placeholder="이월금" />
-                                                <span className="text-xs md:text-sm font-bold text-gray-400 pr-2 shrink-0">원</span>
-                                            </div>
-                                            <button onClick={() => { onUpdateFinanceEdits(carry, {}); alert("이월금이 저장되었습니다."); }} className="px-4 py-2.5 md:py-3 bg-[#802B22] text-white rounded-xl font-black text-xs md:text-sm active:scale-95 transition-transform shrink-0 shadow-sm hover:bg-[#6c231c]">저장</button>
-                                        </div>
+                                    <div className="flex flex-col items-center justify-center mx-1">
+                                        <span className="text-xs font-bold text-gray-400 uppercase mb-1.5">순예배</span>
+                                        <span className="font-black text-gray-800 text-xl md:text-2xl">{quarterStats.count}회</span>
                                     </div>
+                                    <div className="flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-gray-100 bg-gray-50/50 rounded-xl py-3 mx-1" onClick={() => setFinanceEditMode(true)}>
+                                        <span className="text-xs font-bold text-[#802B22] uppercase mb-1.5 flex items-center gap-1"><Icon name="coins" className="w-3.5 h-3.5"/> 순헌금(40%)</span>
+                                        <span className="font-black text-gray-800 text-xl md:text-2xl">₩{cumulativeTotal.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                                    <div className="border-t border-gray-100 pt-4 w-full">
-                                        <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest block mb-3 px-1">순예배 헌금 내역</label>
-                                        <div className="space-y-2 max-h-[30vh] overflow-y-auto pr-1 md:pr-2 custom-scrollbar w-full">
-                                            {history.length === 0 && <div className="text-xs md:text-sm text-gray-400 font-bold text-center py-6">기록된 헌금 내역이 없습니다.</div>}
-                                            {history.map(h => (
-                                                <div key={h.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100 w-full hover:bg-gray-100 transition-colors">
-                                                    <span className="text-xs md:text-sm font-black text-gray-600 shrink-0">{h.date}</span>
-                                                    <div className="flex items-center gap-2 text-right">
-                                                        <span className="text-[10px] md:text-xs font-bold text-gray-400 hidden sm:inline">총액 ₩{(Number(h.offering)||0).toLocaleString()}</span>
-                                                        <span className="hidden sm:inline text-gray-300">|</span>
-                                                        <span className="text-sm md:text-base font-black text-[#802B22]">₩{Math.floor((Number(h.offering)||0) * 0.4).toLocaleString()} <span className="text-[9px] md:text-[10px] text-[#802B22]/60 font-bold ml-0.5">(40%)</span></span>
+                            <Card className="p-4 md:p-6">
+                                <div className="flex justify-between items-center mb-3 md:mb-5">
+                                    <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="text-gray-500 w-5 h-5 md:w-6 md:h-6" /></button>
+                                    <h3 className="font-black text-base md:text-xl">{currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월</h3>
+                                    <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-right" className="text-gray-500 w-5 h-5 md:w-6 md:h-6" /></button>
+                                </div>
+                                <div className="calendar-grid mb-2 md:mb-3">{['일','월','화','수','목','금','토'].map(d => <div key={d} className="text-center text-[10px] md:text-xs font-black text-gray-400 uppercase">{d}</div>)}</div>
+                                <div className="calendar-grid">
+                                    {daysInMonth.map((day, i) => {
+                                        if (!day) return <div key={`empty-${i}`} />;
+                                        const dStr = getLocalYYYYMMDD(day);
+                                        const record = recordDates.get(dStr);
+                                        const mmdd = `${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                                        const bdayNames = birthdayMap.get(mmdd);
+                                        return (
+                                            <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day${(record && bdayNames) ? ' has-extra' : ''} py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500 hover:bg-pink-50' : 'text-gray-400'}`}>
+                                                <span className="text-sm md:text-lg leading-none flex items-center gap-0.5">
+                                                    {day.getDate()}
+                                                    {bdayNames && <span className="text-[9px] md:text-[11px] leading-none">🎂</span>}
+                                                </span>
+                                                {record && (
+                                                    <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
+                                                        record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
+                                                        record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
+                                                        record.type === '연합순예배' ? 'bg-green-100 text-green-600' :
+                                                        record.type === '미실시' ? 'bg-gray-300 text-gray-700' :
+                                                        'bg-red-100 text-[#802B22]'
+                                                    }`}>
+                                                        {record.type || '순예배'}
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                                )}
+                                                {bdayNames && bdayNames.map((person, idx) => (
+                                                    <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.3] bg-pink-100 text-pink-500 break-keep">
+                                                        {person.name}{person.role && <span className="block text-[7px] sm:text-[8px] font-bold opacity-80">{person.role}</span>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </Card>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                            {/* 왼쪽 열: 통계 & 달력 */}
-                            <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-[100px] z-30">
-                                <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
-                                    <div className="flex items-center gap-2 border-b border-gray-50 pb-3">
-                                        <Icon name="bar-chart-2" className="w-5 h-5 text-[#802B22]" />
-                                        <span className="font-black text-[#802B22] text-base">{currentYear}년 {currentHalf} 현황</span>
-                                    </div>
-                                    <div className="grid grid-cols-3 divide-x divide-gray-100">
-                                        <div className="flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-blue-50 bg-blue-50/50 rounded-xl py-3 mx-1" onClick={onOpenDirectory}>
-                                            <span className="text-xs font-bold text-blue-500 uppercase mb-1.5 flex items-center gap-1"><Icon name="users" className="w-3.5 h-3.5"/> 참석순원</span>
-                                            <span className="font-black text-gray-800 text-xl md:text-2xl">{activeMembers.length}명</span>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center mx-1">
-                                            <span className="text-xs font-bold text-gray-400 uppercase mb-1.5">순예배</span>
-                                            <span className="font-black text-gray-800 text-xl md:text-2xl">{quarterStats.count}회</span>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-gray-100 bg-gray-50/50 rounded-xl py-3 mx-1" onClick={() => setFinanceEditMode(true)}>
-                                            <span className="text-xs font-bold text-[#802B22] uppercase mb-1.5 flex items-center gap-1"><Icon name="coins" className="w-3.5 h-3.5"/> 순헌금(40%)</span>
-                                            <span className="font-black text-gray-800 text-xl md:text-2xl">₩{cumulativeTotal.toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <Card className="p-4 md:p-6">
-                                    <div className="flex justify-between items-center mb-3 md:mb-5">
-                                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-left" className="text-gray-500 w-5 h-5 md:w-6 md:h-6" /></button>
-                                        <h3 className="font-black text-base md:text-xl">{currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월</h3>
-                                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 active:scale-90 hover:bg-gray-100 rounded-full"><Icon name="chevron-right" className="text-gray-500 w-5 h-5 md:w-6 md:h-6" /></button>
-                                    </div>
-                                    <div className="calendar-grid mb-2 md:mb-3">{['일','월','화','수','목','금','토'].map(d => <div key={d} className="text-center text-[10px] md:text-xs font-black text-gray-400 uppercase">{d}</div>)}</div>
-                                    <div className="calendar-grid">
-                                        {daysInMonth.map((day, i) => {
-                                            if (!day) return <div key={`empty-${i}`} />;
-                                            const dStr = getLocalYYYYMMDD(day);
-                                            const record = recordDates.get(dStr);
-                                            const mmdd = `${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
-                                            const bdayNames = birthdayMap.get(mmdd);
-                                            return (
-                                                <div key={dStr} onClick={() => record && handleDateClick(dStr)} className={`calendar-day${(record && bdayNames) ? ' has-extra' : ''} py-1 md:py-2 ${record ? 'cursor-pointer text-[#802B22] hover:bg-red-50' : bdayNames ? 'text-pink-500 hover:bg-pink-50' : 'text-gray-400'}`}>
-                                                    <span className="text-sm md:text-lg leading-none flex items-center gap-0.5">
-                                                        {day.getDate()}
-                                                        {bdayNames && <span className="text-[9px] md:text-[11px] leading-none">🎂</span>}
+                        {/* 오른쪽 열: 타임라인 */}
+                        <div className="lg:col-span-7 flex flex-col gap-6 pt-2 lg:pt-0">
+                            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest ml-2 mb-1">Timeline</h3>
+                            {history.length === 0 && <p className="text-center text-base font-bold text-gray-400 py-10">기록된 예배가 없습니다.</p>}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                {history.map(h => (
+                                    <Card key={h.id} className="p-6 flex flex-col gap-4 border-l-[6px] border-[#802B22] hover:shadow-lg transition-shadow">
+                                        <div ref={el => scrollRefs.current[h.date] = el} className="flex justify-between items-start">
+                                            <div>
+                                                <div className="text-xs font-black text-[#802B22] uppercase tracking-widest mb-1.5">Worship Day</div>
+                                                <div className="flex flex-col items-start gap-1.5">
+                                                    <div className="text-2xl font-black text-gray-800 leading-none">{h.date}</div>
+                                                    <span className={`text-xs px-2.5 py-1 rounded-md font-black ${
+                                                        h.type === '휴강' ? 'bg-gray-200 text-gray-600' :
+                                                        h.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
+                                                        h.type === '연합순예배' ? 'bg-green-100 text-green-600' :
+                                                        h.type === '미실시' ? 'bg-gray-300 text-gray-700' :
+                                                        'bg-red-100 text-[#802B22]'
+                                                    }`}>
+                                                        {h.type || '순예배'}
                                                     </span>
-                                                    {record && (
-                                                        <div className={`text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.2] break-keep ${
-                                                            record.type === '휴강' ? 'bg-gray-200 text-gray-600' :
-                                                            record.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
-                                                            record.type === '연합순예배' ? 'bg-green-100 text-green-600' :
-                                                            record.type === '미실시' ? 'bg-gray-300 text-gray-700' :
-                                                            'bg-red-100 text-[#802B22]'
-                                                        }`}>
-                                                            {record.type || '순예배'}
-                                                        </div>
-                                                    )}
-                                                    {bdayNames && bdayNames.map((person, idx) => (
-                                                        <div key={idx} className="text-[8px] sm:text-[9px] md:text-[10px] font-black px-0.5 py-[2px] rounded-sm w-[95%] mx-auto text-center block leading-[1.3] bg-pink-100 text-pink-500 break-keep">
-                                                            {person.name}{person.role && <span className="block text-[7px] sm:text-[8px] font-bold opacity-80">{person.role}</span>}
-                                                        </div>
-                                                    ))}
                                                 </div>
-                                            );
-                                        })}
+                                            </div>
+                                            <div className="text-right flex flex-col items-end gap-1.5">
+                                                <button onClick={() => setEditingRecord(h)} className="p-2 text-[#802B22] bg-red-50 rounded-xl mb-1 active:scale-95 transition-transform flex items-center justify-center hover:bg-red-100 shadow-sm"><Icon name="edit-3" className="w-4 h-4"/></button>
+                                                <div className="text-[11px] font-black text-gray-400 uppercase mb-0.5">순헌금</div>
+                                                <div className="font-black text-gray-800 text-xl">₩{(Number(h.offering)||0).toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        {(h.location || h.notes || (h.members && h.members.length > 0)) && (
+                                            <div className="pt-3 border-t border-gray-50 flex flex-col gap-3">
+                                                
+                                                {(h.location || (h.members && h.members.length > 0)) && (
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <div className="text-sm font-bold text-gray-600 flex items-center gap-1.5">
+                                                            {h.location && <><Icon name="map-pin" className="w-4 h-4 text-[#802B22] shrink-0" /> <span className="break-keep leading-tight">{h.location}</span></>}
+                                                        </div>
+                                                        {h.members && h.members.length > 0 && (
+                                                            <span className="bg-red-50 text-[#802B22] text-[11px] sm:text-xs font-black px-2.5 py-1.5 rounded-lg shrink-0">{h.members.length}명 참석</span>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {h.members && h.members.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {h.members.map(name => {
+                                                            const memberData = members.find(m => m.name === name);
+                                                            const hasPrayer = memberData && memberData.prayer && memberData.prayer.trim();
+                                                            return (
+                                                                <span 
+                                                                    key={name} 
+                                                                    onClick={() => hasPrayer && setPrayerModal({ name, prayer: memberData.prayer })}
+                                                                    className={`text-[11px] sm:text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all ${hasPrayer ? 'bg-red-50 text-[#802B22] border-red-100 cursor-pointer active:scale-95 hover:bg-red-100' : 'bg-gray-50 text-gray-600 border-gray-100'}`}
+                                                                >
+                                                                    {name}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+
+                                                {h.notes && (
+                                                    <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl whitespace-pre-wrap leading-relaxed">
+                                                        {h.notes}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* === 업데이트된 재정 현황 (Dim 처리된 독립 모달) === */}
+                    {financeEditMode && ReactDOM.createPortal(
+                        <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setFinanceEditMode(false)}>
+                            <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
+                                <Card className="border-t-8 border-[#802B22] relative p-4 md:p-6 flex flex-col overflow-hidden w-full max-h-[85vh]">
+                                    <div className="flex justify-between items-center mb-4 border-b border-gray-50 pb-3 shrink-0">
+                                        <h3 className="font-black text-lg md:text-xl text-gray-800 flex items-center gap-2">
+                                            <Icon name="coins" className="text-[#802B22] w-5 h-5"/> 누적순헌금 현황
+                                        </h3>
+                                        <button onClick={() => setFinanceEditMode(false)} className="p-1.5 bg-gray-50 rounded-full text-gray-500 active:scale-95 hover:bg-gray-100">
+                                            <Icon name="x" className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-2 flex-1 pb-2">
+                                        {/* Total Amount Box */}
+                                        <div className="bg-red-50 p-4 md:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center sm:items-end gap-2 border border-red-100 shadow-inner shrink-0">
+                                            <span className="font-black text-[#802B22] text-xs md:text-sm tracking-widest uppercase">총 누적합산 금액</span>
+                                            <span className="font-black text-2xl md:text-3xl text-gray-800 tracking-tight">₩ {cumulativeTotal.toLocaleString()}</span>
+                                        </div>
+
+                                        {/* Manual Entry Form */}
+                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-3 shrink-0">
+                                            <span className="text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest block">수동 내역 추가 (이월금, 지출 등)</span>
+                                            <div className="flex flex-col sm:flex-row gap-2">
+                                                <input type="date" value={adjDate} onChange={e=>setAdjDate(e.target.value)} className="w-full sm:w-1/3 p-2.5 bg-white rounded-lg border border-gray-200 text-sm font-bold outline-none focus:border-[#802B22]" />
+                                                <input type="text" placeholder="사유 (예: 다과비, 이월금)" value={adjReason} onChange={e=>setAdjReason(e.target.value)} className="w-full sm:w-2/3 p-2.5 bg-white rounded-lg border border-gray-200 text-sm font-bold outline-none focus:border-[#802B22]" />
+                                            </div>
+                                            <div className="flex gap-2 items-center">
+                                                <div className="flex-1 flex items-center bg-white border border-gray-200 rounded-lg p-2 px-3 focus-within:border-[#802B22] transition-colors">
+                                                    <input type="number" placeholder="금액 (지출은 - 기호 입력)" value={adjAmount} onChange={e=>setAdjAmount(e.target.value)} className="flex-1 bg-transparent text-sm md:text-base font-bold outline-none text-right min-w-0" />
+                                                    <span className="text-sm font-bold text-gray-400 ml-2 shrink-0">원</span>
+                                                </div>
+                                                <button onClick={handleAddAdjustment} className="px-5 py-2.5 bg-[#802B22] text-white rounded-lg font-black text-sm hover:bg-[#6c231c] active:scale-95 shrink-0 whitespace-nowrap shadow-sm">추가</button>
+                                            </div>
+                                        </div>
+
+                                        {/* List */}
+                                        <div className="border-t border-gray-100 pt-4 flex-1 flex flex-col">
+                                            <span className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest block mb-3 px-1">전체 재정 내역</span>
+                                            <div className="space-y-2 pb-2">
+                                                {combinedList.length === 0 && <div className="text-sm text-gray-400 font-bold text-center py-6">기록된 내역이 없습니다.</div>}
+                                                {combinedList.map(item => (
+                                                    <div key={item.id} className="flex justify-between items-center bg-white p-3 md:p-4 rounded-xl border border-gray-100 shadow-sm w-full hover:bg-gray-50 transition-colors gap-3">
+                                                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                                            <span className="text-[10px] font-black text-gray-400">{item.date}</span>
+                                                            <span className="text-sm font-black text-gray-800 truncate">{item.type === 'manual' ? `[수동] ${item.title}` : `[순예배] ${item.title}`}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 shrink-0">
+                                                            <div className="flex flex-col items-end">
+                                                                <span className={`text-base font-black ${item.amount < 0 ? 'text-blue-600' : 'text-[#802B22]'}`}>
+                                                                    {item.amount > 0 ? '+' : ''}₩{item.amount.toLocaleString()}
+                                                                </span>
+                                                                {item.type === 'worship' && <span className="text-[9px] text-gray-400 font-bold">총액 ₩{item.originalAmount.toLocaleString()}의 40%</span>}
+                                                            </div>
+                                                            {item.type === 'manual' && (
+                                                                <button onClick={() => handleDeleteAdjustment(item.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors active:scale-95" title="내역 삭제 (관리자 권한 필요)">
+                                                                    <Icon name="trash-2" className="w-4 h-4"/>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </Card>
                             </div>
-
-                            {/* 오른쪽 열: 타임라인 */}
-                            <div className="lg:col-span-7 flex flex-col gap-6 pt-2 lg:pt-0">
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest ml-2 mb-1">Timeline</h3>
-                                {history.length === 0 && <p className="text-center text-base font-bold text-gray-400 py-10">기록된 예배가 없습니다.</p>}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                    {history.map(h => (
-                                        <Card key={h.id} className="p-6 flex flex-col gap-4 border-l-[6px] border-[#802B22] hover:shadow-lg transition-shadow">
-                                            <div ref={el => scrollRefs.current[h.date] = el} className="flex justify-between items-start">
-                                                <div>
-                                                    <div className="text-xs font-black text-[#802B22] uppercase tracking-widest mb-1.5">Worship Day</div>
-                                                    <div className="flex flex-col items-start gap-1.5">
-                                                        <div className="text-2xl font-black text-gray-800 leading-none">{h.date}</div>
-                                                        <span className={`text-xs px-2.5 py-1 rounded-md font-black ${
-                                                            h.type === '휴강' ? 'bg-gray-200 text-gray-600' :
-                                                            h.type === '종강예배' ? 'bg-blue-100 text-blue-600' :
-                                                            h.type === '연합순예배' ? 'bg-green-100 text-green-600' :
-                                                            h.type === '미실시' ? 'bg-gray-300 text-gray-700' :
-                                                            'bg-red-100 text-[#802B22]'
-                                                        }`}>
-                                                            {h.type || '순예배'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right flex flex-col items-end gap-1.5">
-                                                    <button onClick={() => setEditingRecord(h)} className="p-2 text-[#802B22] bg-red-50 rounded-xl mb-1 active:scale-95 transition-transform flex items-center justify-center hover:bg-red-100 shadow-sm"><Icon name="edit-3" className="w-4 h-4"/></button>
-                                                    <div className="text-[11px] font-black text-gray-400 uppercase mb-0.5">순헌금</div>
-                                                    <div className="font-black text-gray-800 text-xl">₩{(Number(h.offering)||0).toLocaleString()}</div>
-                                                </div>
-                                            </div>
-                                            
-                                            {/* 조회 화면에서만: 장소 및 참석인원 요약 행 -> 참석자 명단 -> 메모 순서로 배치 */}
-                                            {(h.location || h.notes || (h.members && h.members.length > 0)) && (
-                                                <div className="pt-3 border-t border-gray-50 flex flex-col gap-3">
-                                                    
-                                                    {(h.location || (h.members && h.members.length > 0)) && (
-                                                        <div className="flex justify-between items-start gap-2">
-                                                            <div className="text-sm font-bold text-gray-600 flex items-center gap-1.5">
-                                                                {h.location && <><Icon name="map-pin" className="w-4 h-4 text-[#802B22] shrink-0" /> <span className="break-keep leading-tight">{h.location}</span></>}
-                                                            </div>
-                                                            {h.members && h.members.length > 0 && (
-                                                                <span className="bg-red-50 text-[#802B22] text-[11px] sm:text-xs font-black px-2.5 py-1.5 rounded-lg shrink-0">{h.members.length}명 참석</span>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {h.members && h.members.length > 0 && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {h.members.map(name => {
-                                                                const memberData = members.find(m => m.name === name);
-                                                                const hasPrayer = memberData && memberData.prayer && memberData.prayer.trim();
-                                                                return (
-                                                                    <span 
-                                                                        key={name} 
-                                                                        onClick={() => hasPrayer && setPrayerModal({ name, prayer: memberData.prayer })}
-                                                                        className={`text-[11px] sm:text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all ${hasPrayer ? 'bg-red-50 text-[#802B22] border-red-100 cursor-pointer active:scale-95 hover:bg-red-100' : 'bg-gray-50 text-gray-600 border-gray-100'}`}
-                                                                    >
-                                                                        {name}
-                                                                    </span>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-
-                                                    {h.notes && (
-                                                        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl whitespace-pre-wrap leading-relaxed">
-                                                            {h.notes}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </Card>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
 
-                    {/* 새 예배 기록 작성 모달 (공간 최적화 및 장소/헌금 순서 변경) */}
-                    {showAdd && !financeEditMode && ReactDOM.createPortal(
+                    {/* 새 예배 기록 작성 모달 */}
+                    {showAdd && ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[99999] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 fade-in pb-[90px]" onClick={() => setShowAdd(false)}>
                             <div className="w-full max-w-2xl mx-auto flex flex-col max-h-full shadow-2xl rounded-3xl bg-white" onClick={e=>e.stopPropagation()}>
                                 <Card className="border-t-8 border-[#802B22] fade-in p-4 md:p-6 flex flex-col overflow-hidden w-full max-h-[85vh]">
@@ -1874,7 +1938,7 @@
             const [showDirectory, setShowDirectory] = useState(false); 
             const [members, setMembers] = useState([]);
             const [history, setHistory] = useState([]);
-            const [finance, setFinance] = useState({ carryOver: 180000 });
+            const [finance, setFinance] = useState({ carryOver: 180000, adjustments: [] });
             const [adminPass, setAdminPass] = useState("00");
 
             // --- 전역 관리자 인증 상태 ---
@@ -2011,14 +2075,9 @@
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'guide'), newData);
             };
 
-            const handleUpdateFinanceEdits = async (carryOver, edits) => {
-                const { db, doc, setDoc, updateDoc, appId } = window.FB_SDK;
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'finance'), { carryOver: Number(carryOver) });
-                for (const id in edits) {
-                    if (edits[id] !== undefined) {
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'worship', id), { offering: Number(edits[id]) });
-                    }
-                }
+            const handleUpdateFinance = async (newFinanceData) => {
+                const { db, doc, setDoc, appId } = window.FB_SDK;
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'finance'), newFinanceData, { merge: true });
             };
 
             const handleUpdateRecord = async (id, data) => {
@@ -2144,7 +2203,7 @@
                         <div className="w-full max-w-6xl p-4 md:p-6">
                             {view === 'prayer' && <PrayerListView members={members} onUpdate={handleUpdatePrayer} />}
                             {view === 'guide' && <WorshipGuideView guideData={guideData} onUpdateGuide={handleUpdateGuide} />}
-                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} isGlobalAdmin={isGlobalAdmin} onRequestAdmin={requestAdmin} onUpdateFinanceEdits={handleUpdateFinanceEdits} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
+                            {view === 'history' && <WorshipHistoryView history={history} members={members} finance={finance} isGlobalAdmin={isGlobalAdmin} onRequestAdmin={requestAdmin} onUpdateFinance={handleUpdateFinance} onUpdateRecord={handleUpdateRecord} onDeleteRecord={handleDeleteRecord} onOpenDirectory={() => setShowDirectory(true)} onAddRecord={async (r) => { const { db, collection, addDoc, appId } = window.FB_SDK; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'worship'), r); }} />}
                         </div>
                     </div>
 
